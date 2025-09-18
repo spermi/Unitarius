@@ -1,0 +1,20 @@
+# Hide directory listing + avoid content negotiation traps
+Options -Indexes -MultiViews
+
+# Point root to public/index.php
+DirectoryIndex public/index.php
+
+RewriteEngine On
+RewriteBase /unitarius/
+
+# Block sensitive paths
+RewriteRule ^(app|src|storage|tests|vendor)/ - [F,L]
+RewriteRule ^(\.env|composer\.(json|lock)) - [F,L]
+
+# Let existing files/dirs pass through
+RewriteCond %{REQUEST_FILENAME} -f [OR]
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^ - [L]
+
+# Front controller
+RewriteRule ^ public/index.php [QSA,L]
