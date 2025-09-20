@@ -55,3 +55,11 @@ Stack:
 #4 C:\wamp\www\unitarius\public\index.php(28): Core\Router->dispatch('GET', '/unitarius/')
 #5 {main}
 
+[2025-09-20T13:12:35+00:00] syntax error, unexpected token ";" in C:\wamp\www\unitarius\app\Views\layout.php:51
+Stack:
+#0 C:\wamp\www\unitarius\app\Controllers\HomeController.php(24): Core\View::render('home', Array)
+#1 [internal function]: App\Controllers\HomeController->index()
+#2 C:\wamp\www\unitarius\src\Core\Router.php(36): call_user_func(Array)
+#3 C:\wamp\www\unitarius\public\index.php(29): Core\Router->dispatch('GET', '/unitarius/')
+#4 {main}
+
