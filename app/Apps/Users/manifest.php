@@ -6,6 +6,7 @@ return [
   'icon'   => 'fa-solid fa-user-gear',
   'prefix' => '/users',
   'order'  => 20,
+  'hidden' => false, // do not show in menu
   'match'  => ['#^/users#'],
   'perm'   => null,
   'children'=> [

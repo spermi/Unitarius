@@ -18,50 +18,80 @@ Minimal PHP microframework built from scratch for learning and internal use.
 
 ```
 unitarius/
-├── app/                 # Application layer (controllers, views)
-│   ├── Controllers/
-│   │   ├── HomeController.php   # Renders home page, tests DB
-│   │   └── HelloController.php # Request/Response test (no DB)
-│   ├── Views/
-│   │   ├── layout.php   # Base layout template
-│   │   ├── home.php     # Home page view
-│   │   ├── hello.php    # Hello demo view
-│   │   └── partials/
-│   │       ├── navbar.php      # AdminLTE top navbar
-│   │       └── sidebar.php     # AdminLTE sidebar (base_url + active link)
-│   └── errors/
-│       ├── 404.php      # Not found page
-│       └── 500.php      # Error page (used by ErrorCatcher middleware)
-├── config/              # (future) central configs
-├── public/
-|   ├── assets/
-|   |   └─ adminlte/           # AdminLTE static assets V4
-│   │       ├── css/            # AdminLTE CSS (adminlte.min.css, stb.)
-│   │       ├── js/             # AdminLTE JS (adminlte.min.js, stb.)
-│   │       └── img/            # AdminLTE images (boxed-bg.jpg, avatar.png, stb.)
-│   ├── index.php        # Front controller (bootstrap + router/kernel)
-│   └── .htaccess        # Apache rewrite rules
-├── src/
-│   ├── Core/
-│   │   ├── Router.php          # Minimal GET router
-│   │   ├── ErrorHandler.php    # Unified error/exception handling
-│   │   ├── DB.php              # PDO wrapper for PostgreSQL
-│   │   ├── View.php            # PHP view rendering with layout
-│   │   ├── Request.php         # HTTP request wrapper
-│   │   ├── Response.php        # HTTP response wrapper
-│   │   ├── Middleware.php      # Middleware interface
-│   │   ├── Kernel.php          # Middleware pipeline runner
-│   │   └── Helpers.php         # Global helpers (e.g. base_url() using APP_URL)
-│   └── Http/
-│       └── Middleware/
-│           ├── ErrorCatcher.php # Catches exceptions, shows 500 page
-│           └── TrailingSlash.php # Redirects /foo/ → /foo
-├── storage/
-│   └── logs/
-│       └── app.log             # Error log
-├── tests/                      # (future) PHPUnit tests
-├── composer.json               # Composer config (autoload, deps)
-└── .env                        # Local environment config
+├─ app/                                   # Application layer (controllers, views, per-app modules)
+│  ├─ Apps/                               # Modular "mini-apps" live here; each app is self-contained
+│  │  ├─ People/                          # People management mini-app
+│  │  │  ├─ Controllers/                  # Controllers for People module
+│  │  │  │  └─ PersonController.php       # Example controller (list/create/show)
+│  │  │  ├─ Views/                        # Views for People module (rendered into global layout)
+│  │  │  │  ├─ list.php                   # People list view
+│  │  │  │  └─ form.php                   # Create/Edit form view
+│  │  │  ├─ routes.php                    # Routes local to People (mounted under prefix from manifest)
+│  │  │  └─ manifest.php                  # Menu/App meta: label, icon, prefix, order, [children], [perm]
+│  │  ├─ Users/                           # Users + (later) RBAC mini-app
+│  │  │  ├─ Controllers/
+│  │  │  │  └─ UserController.php         # User listing & management
+│  │  │  ├─ Views/
+│  │  │  │  ├─ list.php                   # Users list view
+│  │  │  │  └─ rbac.php                   # Placeholder for RBAC UI (roles/permissions)
+│  │  │  ├─ routes.php                    # Users app routes
+│  │  │  └─ manifest.php                  # Menu/App meta (can define children: Users, RBAC, etc.)
+│  │  └─ (more apps as needed)/
+│  ├─ Controllers/
+│  │  └─ DashboardController.php          # Global dashboard (home)
+│  ├─ Views/
+│  │  ├─ layout.php                       # Global AdminLTE layout (header/sidebar/content/footer)
+│  │  ├─ partials/
+│  │  │  ├─ navbar.php                    # AdminLTE top navbar (brand, user menu)
+│  │  │  ├─ sidebar.php                   # AdminLTE sidebar; renders menu from MenuLoader
+│  │  │  └─ breadcrumbs.php               # Simple breadcrumbs (optional)
+│  │  └─ dashboard/
+│  │     └─ index.php                     # Dashboard landing page content
+│  └─ errors/
+│     ├─ 404.php                          # Not found page
+│     └─ 500.php                          # Error page (used by ErrorCatcher)
+├─ config/
+│  ├─ apps.php                            # App registry (optional if you fully rely on manifest scanning)
+│  └─ menu.core.php                       # Core (non-app) menu entries, e.g., Dashboard
+├─ public/
+│  ├─ assets/
+│  │  └─ adminlte/                        # AdminLTE V4 static assets (local copy)
+│  │     ├─ css/                          # AdminLTE & dependencies CSS
+│  │     │  ├─ adminlte.min.css           # Core AdminLTE CSS (minified)
+│  │     │  └─ adminlte.css               # (optional) Non-minified version for dev
+│  │     ├─ js/                           # AdminLTE & dependencies JS
+│  │     │  ├─ adminlte.min.js            # Core AdminLTE JS (minified)
+│  │     │  └─ adminlte.js                # (optional) Non-minified version for dev
+│  │     ├─ img/                          # Images used by the template (logos, placeholders)
+│  │     │  ├─ avatar.png                 # Example user avatar used in UI
+│  │     │  └─ boxed-bg.jpg               # Example boxed layout background
+│  │     └─ (optional extras)             # e.g., webfonts/plugins if you add them later
+│  ├─ index.php                           # Front controller (bootstrap + router/kernel)
+│  └─ .htaccess                           # Rewrite rules (route all to public/index.php)
+├─ src/
+│  ├─ Core/
+│  │  ├─ Router.php                       # Minimal router with support for mounting app routes
+│  │  ├─ ErrorHandler.php                 # Unified error/exception handling
+│  │  ├─ DB.php                           # PDO wrapper for PostgreSQL
+│  │  ├─ View.php                         # PHP view rendering with base layout injection
+│  │  ├─ Request.php                      # HTTP request abstraction
+│  │  ├─ Response.php                     # HTTP response abstraction
+│  │  ├─ Middleware.php                   # Middleware interface
+│  │  ├─ Kernel.php                       # Middleware pipeline runner
+│  │  ├─ Helpers.php                      # Global helpers (e.g., base_url(), base_path())
+│  │  └─ MenuLoader.php                   # Scans app manifests, builds menu structure (with defaults)
+│  └─ Http/
+│     └─ Middleware/
+│        ├─ ErrorCatcher.php              # Catches exceptions, renders 500 (or JSON later)
+│        └─ TrailingSlash.php             # Redirects /foo/ → /foo
+├─ storage/
+│  └─ logs/
+│     └─ app.log                          # Application error log
+├─ tests/                                 # (future) PHPUnit tests
+├─ composer.json                          # Autoload + deps (phpdotenv, etc.)
+├─ .env                                   # Local environment config (APP_ENV, DB_*)
+└─ README.md                              # Keep updated with structure/menu changes
+
 ```
 
 
@@ -168,44 +198,41 @@ RewriteRule ^ public/index.php [QSA,L]
 
 ## Example Controllers
 
-app/Controllers/HomeController.php:
+app/Controllers/DashboardController.php:
 
 ```php
-final class HomeController
+<?php
+declare(strict_types=1);
+
+namespace App\Controllers;
+
+use Core\DB;
+use Core\View;
+
+final class DashboardController
 {
     public function index(): string
     {
+        // Example: read a small sample (adjust table/columns later)
         $rows = [];
         try {
-            $pdo = \Core\DB::pdo();
-            $stmt = $pdo->query('SELECT version() AS pg_version');
+            $pdo = DB::pdo();
+            // TODO: replace with your real table
+            $stmt = $pdo->query('SELECT 1 AS id, CURRENT_DATE AS today');
             $rows = $stmt->fetchAll() ?: [];
-        } catch (\Throwable) {}
+        } catch (\Throwable) {
+            // swallow for demo; ErrorHandler already logs in local
+        }
 
-        return \Core\View::render('home', [
+        return View::render('dashboard/index', [
             'title' => 'Unitarius – Kezdőlap',
             'rows'  => $rows,
         ]);
     }
 }
+
 ```
 
-app/Controllers/HelloController.php (no DB, test Request/Response):
-
-```php
-final class HelloController
-{
-    public function greet(\Core\Request $r): \Core\Response
-    {
-        $name = trim(basename($r->uri()));
-        $html = \Core\View::render('hello', [
-            'title' => 'Üdvözlet',
-            'name'  => $name ?: 'Világ'
-        ]);
-        return (new \Core\Response())->html($html);
-    }
-}
-```
 ---
 
 Middleware
