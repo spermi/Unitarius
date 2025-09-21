@@ -27,7 +27,7 @@ unitarius/
 │  │  │  │  ├─ list.php                   # People list view
 │  │  │  │  └─ form.php                   # Create/Edit form view
 │  │  │  ├─ routes.php                    # Routes local to People (mounted under prefix from manifest)
-│  │  │  └─ manifest.php                  # Menu/App meta: label, icon, prefix, order, [children], [perm]
+│  │  │  └─ manifest.php                  # Menu/App meta: label, icon, prefix, order, children, perm
 │  │  ├─ Users/                           # Users + (later) RBAC mini-app
 │  │  │  ├─ Controllers/
 │  │  │  │  └─ UserController.php         # User listing & management
@@ -35,15 +35,15 @@ unitarius/
 │  │  │  │  ├─ list.php                   # Users list view
 │  │  │  │  └─ rbac.php                   # Placeholder for RBAC UI (roles/permissions)
 │  │  │  ├─ routes.php                    # Users app routes
-│  │  │  └─ manifest.php                  # Menu/App meta (can define children: Users, RBAC, etc.)
+│  │  │  └─ manifest.php                  # Per-app manifest (menu meta, children: Users, RBAC)
 │  │  └─ (more apps as needed)/
 │  ├─ Controllers/
-│  │  └─ DashboardController.php          # Global dashboard (home)
+│  │  └─ DashboardController.php          # Global dashboard (replaces old HomeController)
 │  ├─ Views/
 │  │  ├─ layout.php                       # Global AdminLTE layout (header/sidebar/content/footer)
 │  │  ├─ partials/
 │  │  │  ├─ navbar.php                    # AdminLTE top navbar (brand, user menu)
-│  │  │  ├─ sidebar.php                   # AdminLTE sidebar; renders menu from MenuLoader
+│  │  │  ├─ sidebar.php                   # AdminLTE sidebar; dynamic, built via MenuLoader
 │  │  │  └─ breadcrumbs.php               # Simple breadcrumbs (optional)
 │  │  └─ dashboard/
 │  │     └─ index.php                     # Dashboard landing page content
@@ -51,7 +51,7 @@ unitarius/
 │     ├─ 404.php                          # Not found page
 │     └─ 500.php                          # Error page (used by ErrorCatcher)
 ├─ config/
-│  ├─ apps.php                            # App registry (optional if you fully rely on manifest scanning)
+│  ├─ apps.php                            # (Optional) App registry if not only manifest-based
 │  └─ menu.core.php                       # Core (non-app) menu entries, e.g., Dashboard
 ├─ public/
 │  ├─ assets/
@@ -79,7 +79,7 @@ unitarius/
 │  │  ├─ Middleware.php                   # Middleware interface
 │  │  ├─ Kernel.php                       # Middleware pipeline runner
 │  │  ├─ Helpers.php                      # Global helpers (e.g., base_url(), base_path())
-│  │  └─ MenuLoader.php                   # Scans app manifests, builds menu structure (with defaults)
+│  │  └─ MenuLoader.php                   # Scans app manifests, builds menu; child order + defaults
 │  └─ Http/
 │     └─ Middleware/
 │        ├─ ErrorCatcher.php              # Catches exceptions, renders 500 (or JSON later)
@@ -91,9 +91,7 @@ unitarius/
 ├─ composer.json                          # Autoload + deps (phpdotenv, etc.)
 ├─ .env                                   # Local environment config (APP_ENV, DB_*)
 └─ README.md                              # Keep updated with structure/menu changes
-
 ```
-
 
 ---
 
@@ -112,9 +110,9 @@ unitarius/
   },
   "autoload": {
     "psr-4": {
-      "App\\": "app/",
-      "Core\\": "src/Core/",
-      "Http\\": "src/Http/"
+      "App\": "app/",
+      "Core\": "src/Core/",
+      "Http\": "src/Http/"
     }
   }
 }
@@ -182,23 +180,23 @@ RewriteRule ^ public/index.php [QSA,L]
 
 ## Core Components Implemented
 
--Router.php – minimal GET routing, works from subfolder /unitarius/.
--ErrorHandler.php – unified error/exception handling, logs to storage/logs/app.log.
--DB.php – PDO wrapper for PostgreSQL connection.
--View.php – plain PHP view rendering with layout support.
-```-A view engine plain PHP. Nincs $this->extend() / $this->section() támogatás.
-  A View::render('name', $data) mindig beágyazza a nézetet a layout.php-ba a $content változón keresztül.
- ```
--Request.php – normalized wrapper for HTTP request.
--Response.php – normalized wrapper for HTTP response.
--Middleware.php – interface for middleware.
--Kernel.php – middleware pipeline runner.
+- Router.php – minimal GET routing, works from subfolder /unitarius/.  
+- ErrorHandler.php – unified error/exception handling, logs to storage/logs/app.log.  
+- DB.php – PDO wrapper for PostgreSQL connection.  
+- View.php – plain PHP view rendering with layout support.  
+  > View engine is plain PHP. No `$this->extend()` / `$this->section()` support.  
+  > `View::render('name', $data)` always injects view into `layout.php` via `$content`.  
+- Request.php – normalized wrapper for HTTP request.  
+- Response.php – normalized wrapper for HTTP response.  
+- Middleware.php – interface for middleware.  
+- Kernel.php – middleware pipeline runner.  
+- **MenuLoader.php** – scans per-app manifests, sets defaults (`icon`, `order`, `match`), sorts children by order + label.  
 
 ---
 
-## Example Controllers
+## Example Controller
 
-app/Controllers/DashboardController.php:
+`app/Controllers/DashboardController.php`:
 
 ```php
 <?php
@@ -213,11 +211,9 @@ final class DashboardController
 {
     public function index(): string
     {
-        // Example: read a small sample (adjust table/columns later)
         $rows = [];
         try {
             $pdo = DB::pdo();
-            // TODO: replace with your real table
             $stmt = $pdo->query('SELECT 1 AS id, CURRENT_DATE AS today');
             $rows = $stmt->fetchAll() ?: [];
         } catch (\Throwable) {
@@ -225,25 +221,23 @@ final class DashboardController
         }
 
         return View::render('dashboard/index', [
-            'title' => 'Unitarius – Kezdőlap',
+            'title' => 'Unitarius – Vezérlőpult',
             'rows'  => $rows,
         ]);
     }
 }
-
 ```
 
 ---
 
-Middleware
+## Middleware
 
-ErrorCatcher – catches exceptions and shows errors/500.php (with fallback).
+- ErrorCatcher – catches exceptions and shows errors/500.php (with fallback).  
+- TrailingSlash – normalizes `/foo/` → `/foo`.  
 
-TrailingSlash – normalizes /foo/ → /foo.
+Usage in `public/index.php`:
 
-Usage in public/index.php:
-
-``` php
+```php
 $kernel = new \Core\Kernel();
 $kernel->push(new \Http\Middleware\ErrorCatcher());
 $kernel->push(new \Http\Middleware\TrailingSlash());
@@ -258,6 +252,96 @@ $res->send();
 
 ---
 
+## Dynamic Sidebar (AdminLTE)
+
+- Each app defines its own `manifest.php` with: `name`, `label`, `icon`, `prefix`, `order`, `match`, `children`.  
+- Children support individual icons, order, and `perm`.  
+- `MenuLoader` merges manifests into a menu structure, applies defaults:  
+  - parent default icon: `fa-regular fa-folder`  
+  - child default icon: `fa-regular fa-circle`  
+  - default order: `999`  
+- Sidebar renders dynamically:  
+  - If an item has children → parent acts as a **toggler only**, not a link.  
+  - Children sorted by `order`, then label.  
+- Future: integrate `can($perm)` for RBAC filtering.
+
+---
+
+## Per-App Manifest (Menu Metadata)
+
+Each app under `app/Apps/*` defines its own `manifest.php`.  
+The manifest declares how the app appears in the dynamic AdminLTE sidebar.
+
+### Schema (per top-level item)
+
+- `name` *(string, required)* – unique internal key (`people`, `users`)  
+- `label` *(string, required)* – human readable menu name (HU text)  
+- `prefix` *(string, required)* – URL prefix (e.g. `/people`)  
+- `icon` *(string, required)* – Font Awesome icon class (`fa-solid fa-users`)  
+- `order` *(int, optional)* – menu order (default `999`)  
+- `match` *(array, optional)* – regex patterns to determine “active” state  
+- `perm` *(string|null, optional)* – RBAC requirement (future use)  
+- `children` *(array, optional)* – submenu items  
+
+### Schema (child item)
+
+- `label` *(string, required)* – child menu label  
+- `url` *(string, required)* – child absolute URL (use `base_url('/path')`)  
+- `match` *(array, required)* – regex patterns for active-state  
+- `icon` *(string, optional)* – child icon class (default: `fa-regular fa-circle`)  
+- `order` *(int, optional)* – child order (default `999`)  
+- `perm` *(string|null, optional)* – RBAC requirement (future use)  
+
+### Example: `app/Apps/People/manifest.php`
+
+```php
+<?php
+declare(strict_types=1);
+
+return [
+    'name'    => 'people',
+    'label'   => 'Személyek',
+    'icon'    => 'fa-solid fa-users',
+    'prefix'  => '/people',
+    'order'   => 10,
+    'match'   => ['#^/people#'],
+    'perm'    => null,
+    'children'=> [
+        [
+            'label' => 'Lista',
+            'url'   => base_url('/people'),
+            'match' => ['#^/people$#'],
+            'icon'  => 'fa-regular fa-list',
+            'order' => 1,
+            'perm'  => null,
+        ],
+        [
+            'label' => 'Új személy',
+            'url'   => base_url('/people/new'),
+            'match' => ['#^/people/new#'],
+            'icon'  => 'fa-regular fa-plus',
+            'order' => 2,
+            'perm'  => null,
+        ],
+    ],
+];
+```
+Notes
+
+If an item has children → parent acts as a toggler only, not a link.
+
+Parents/children are sorted by order, then label.
+
+Default icons:
+
+Parent: fa-regular fa-folder
+
+Child: fa-regular fa-angles-right
+
+RBAC integration (perm) will be applied later using can($perm).
+
+
+---
 ## RBAC (Role-Based Access Control)
 
 The system will use **RBAC** to manage permissions across multiple modules/programs.  
@@ -280,20 +364,10 @@ This approach is simpler and more scalable than per-user ACLs.
 - **Editor** – can create/update but not manage roles.
 - **Viewer** – read-only.
 
-### Kovetkezo lepesek , otletek :
-- Grafikus felulet:
-	 AdminLTE V4
-- Konfiguráció kezelés
-	Külön config/ mappa, pl. config/app.php, config/db.php.
-	Így nem mindenhol közvetlenül az .env-ből olvasunk, hanem van egy központi config loader.
-- Logging
-	Most van storage/logs/app.log, de lehetne egy Logger osztály.
-	Példa: Logger::info(), Logger::error() → automatikus timestamp, környezet, request ID.
-- Validator
-	Alap input validálás (kötelező mező, email, hossz).
-	Hasznos, ha formokat kezdünk kezelni.
-- Security middleware
-	Pl. CsrfMiddleware token ellenőrzés POST-hoz.
-	SecurityHeadersMiddleware alap HTTP headerekkel.
-- Egyszerű CLI parancsok (talan nem kell )
-	bin/console script, amivel futtathatsz: php bin/console migrate, php bin/console cache:clear, stb.
+### Next ideas:
+- GUI with AdminLTE V4  
+- Config management (`config/app.php`, `config/db.php`) instead of direct `.env` usage everywhere.  
+- Logger class (e.g. `Logger::info()`, `Logger::error()`) with timestamp, env, request ID.  
+- Validator (basic form validation).  
+- Security middleware (CSRF tokens, security headers).  
+- (Optional) CLI commands (e.g. `bin/console migrate`).  
