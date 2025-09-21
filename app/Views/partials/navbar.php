@@ -200,7 +200,7 @@
               <!--begin::User Menu Dropdown-->
               <li class="nav-item dropdown user-menu">
                 <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown">
-                  <img src="<?= base_url('public/assets/adminlte/img/user3-128x128.jpg') ?>" class="user-image rounded-circle shadow" alt="User Image" >
+                  <img src="<?= base_url('public/assets/adminlte/img/user6-128x128.jpg') ?>" class="user-image rounded-circle shadow" alt="User Image" >
                   <span class="d-none d-md-inline">Alexander Pierce</span>
                 </a>
                 <ul class="dropdown-menu dropdown-menu-lg dropdown-menu-end">
