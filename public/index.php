@@ -7,6 +7,9 @@ require __DIR__ . '/../src/Core/helpers.php';
 use Core\ErrorHandler;
 use Core\Router;
 use App\Controllers\HomeController;
+use Core\{Request, Response, Kernel};
+use Http\Middleware\{ErrorCatcher, TrailingSlash};
+
 
 // Optional: load .env if available (Dotenv installed in composer)
 $basePath = dirname(__DIR__);
@@ -28,18 +31,4 @@ $router = new Router();
 $router->get('/', [HomeController::class, 'index']);
 $router->dispatch($_SERVER['REQUEST_METHOD'], $_SERVER['REQUEST_URI']);
 
-// public/index.php (végére, csak ideiglenes teszt miatt!)
-use App\Controllers\HelloController;
-use Core\{Request, Response, Kernel};
-use Http\Middleware\{ErrorCatcher, TrailingSlash};
 
-$req = new Request();
-if (str_starts_with($req->uri(), '/unitarius/hello')) {
-    $kernel = new Kernel();
-    $kernel->push(new ErrorCatcher());
-    $kernel->push(new TrailingSlash());
-
-    $res = $kernel->handle($req, fn($r) => (new HelloController())->greet($r));
-    $res->send();
-    exit;
-}
