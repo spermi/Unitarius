@@ -6,7 +6,7 @@ require __DIR__ . '/../src/Core/helpers.php';
 
 use Core\ErrorHandler;
 use Core\Router;
-use App\Controllers\HomeController;
+use App\Controllers\DashboardController;
 use Core\{Request, Response, Kernel};
 use Http\Middleware\{ErrorCatcher, TrailingSlash};
 
@@ -28,7 +28,7 @@ ErrorHandler::register($appEnv);
 
 // --- app bootstrap below ---
 $router = new Router();
-$router->get('/', [HomeController::class, 'index']);
+$router->get('/', [DashboardController::class, 'index']);
 $router->dispatch($_SERVER['REQUEST_METHOD'], $_SERVER['REQUEST_URI']);
 
 

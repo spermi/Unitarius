@@ -6,7 +6,7 @@ namespace App\Controllers;
 use Core\DB;
 use Core\View;
 
-final class HomeController
+final class DashboardController
 {
     public function index(): string
     {
@@ -21,7 +21,7 @@ final class HomeController
             // swallow for demo; ErrorHandler already logs in local
         }
 
-        return View::render('home', [
+        return View::render('dashboard/index', [
             'title' => 'Unitarius – Kezdőlap',
             'rows'  => $rows,
         ]);

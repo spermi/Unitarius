@@ -6,8 +6,7 @@ $vendorDir = dirname(__DIR__);
 $baseDir = dirname($vendorDir);
 
 return array(
-    'App\\Controllers\\HelloController' => $baseDir . '/app/Controllers/HelloController.php',
-    'App\\Controllers\\HomeController' => $baseDir . '/app/Controllers/HomeController.php',
+    'App\\Controllers\\DashboardController' => $baseDir . '/app/Controllers/DashboardController.php',
     'Attribute' => $vendorDir . '/symfony/polyfill-php80/Resources/stubs/Attribute.php',
     'Composer\\InstalledVersions' => $vendorDir . '/composer/InstalledVersions.php',
     'Core\\DB' => $baseDir . '/src/Core/DB.php',
@@ -15,6 +14,7 @@ return array(
     'Core\\Kernel' => $baseDir . '/src/Core/Kernel.php',
     'Core\\Middleware' => $baseDir . '/src/Core/Middleware.php',
     'Core\\Request' => $baseDir . '/src/Core/Request.php',
+    'Core\\Response' => $baseDir . '/src/Core/Response.php',
     'Core\\Router' => $baseDir . '/src/Core/Router.php',
     'Core\\View' => $baseDir . '/src/Core/View.php',
     'Dotenv\\Dotenv' => $vendorDir . '/vlucas/phpdotenv/src/Dotenv.php',

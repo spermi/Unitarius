@@ -85,8 +85,7 @@ class ComposerStaticInit247a2d85ffad6b1a40bb21805970d7b2
     );
 
     public static $classMap = array (
-        'App\\Controllers\\HelloController' => __DIR__ . '/../..' . '/app/Controllers/HelloController.php',
-        'App\\Controllers\\HomeController' => __DIR__ . '/../..' . '/app/Controllers/HomeController.php',
+        'App\\Controllers\\DashboardController' => __DIR__ . '/../..' . '/app/Controllers/DashboardController.php',
         'Attribute' => __DIR__ . '/..' . '/symfony/polyfill-php80/Resources/stubs/Attribute.php',
         'Composer\\InstalledVersions' => __DIR__ . '/..' . '/composer/InstalledVersions.php',
         'Core\\DB' => __DIR__ . '/../..' . '/src/Core/DB.php',
@@ -94,6 +93,7 @@ class ComposerStaticInit247a2d85ffad6b1a40bb21805970d7b2
         'Core\\Kernel' => __DIR__ . '/../..' . '/src/Core/Kernel.php',
         'Core\\Middleware' => __DIR__ . '/../..' . '/src/Core/Middleware.php',
         'Core\\Request' => __DIR__ . '/../..' . '/src/Core/Request.php',
+        'Core\\Response' => __DIR__ . '/../..' . '/src/Core/Response.php',
         'Core\\Router' => __DIR__ . '/../..' . '/src/Core/Router.php',
         'Core\\View' => __DIR__ . '/../..' . '/src/Core/View.php',
         'Dotenv\\Dotenv' => __DIR__ . '/..' . '/vlucas/phpdotenv/src/Dotenv.php',
