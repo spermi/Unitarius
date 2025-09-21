@@ -1,4 +1,10 @@
-<?php // config/menu.core.php
+<?php
 return [
-  ['label'=>'Dashboard','url'=>base_url('/'), 'icon'=>'fa-solid fa-gauge', 'match'=>['#^/$#'], 'order'=>0],
+    [
+        'label' => 'Dashboard',
+        'url'   => base_url('/'),
+        'icon'  => 'fa-solid fa-gauge',
+        'match' => ['#^/$#'],
+        'order' => 0,
+    ],
 ];

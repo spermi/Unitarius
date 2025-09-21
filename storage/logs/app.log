@@ -1,0 +1,96 @@
+[2025-09-21T17:32:40+00:00] syntax error, unexpected identifier "manifest", expecting "function" in C:\wamp\www\unitarius\src\Core\MenuLoader.php:11
+Stack:
+#0 C:\wamp\www\unitarius\vendor\composer\ClassLoader.php(427): Composer\Autoload\{closure}('C:\\wamp\\www\\uni...')
+#1 C:\wamp\www\unitarius\app\Views\partials\sidebar.php(9): Composer\Autoload\ClassLoader->loadClass('Core\\MenuLoader')
+#2 C:\wamp\www\unitarius\app\Views\layout.php(43): require('C:\\wamp\\www\\uni...')
+#3 C:\wamp\www\unitarius\src\Core\View.php(75): require('C:\\wamp\\www\\uni...')
+#4 C:\wamp\www\unitarius\app\Controllers\DashboardController.php(24): Core\View::render('dashboard/index', Array)
+#5 [internal function]: App\Controllers\DashboardController->index()
+#6 C:\wamp\www\unitarius\src\Core\Router.php(36): call_user_func(Array)
+#7 C:\wamp\www\unitarius\public\index.php(77): Core\Router->dispatch('GET', '/unitarius')
+#8 {main}
+
+[2025-09-21T17:32:42+00:00] syntax error, unexpected identifier "manifest", expecting "function" in C:\wamp\www\unitarius\src\Core\MenuLoader.php:11
+Stack:
+#0 C:\wamp\www\unitarius\vendor\composer\ClassLoader.php(427): Composer\Autoload\{closure}('C:\\wamp\\www\\uni...')
+#1 C:\wamp\www\unitarius\app\Views\partials\sidebar.php(9): Composer\Autoload\ClassLoader->loadClass('Core\\MenuLoader')
+#2 C:\wamp\www\unitarius\app\Views\layout.php(43): require('C:\\wamp\\www\\uni...')
+#3 C:\wamp\www\unitarius\src\Core\View.php(75): require('C:\\wamp\\www\\uni...')
+#4 C:\wamp\www\unitarius\app\Controllers\DashboardController.php(24): Core\View::render('dashboard/index', Array)
+#5 [internal function]: App\Controllers\DashboardController->index()
+#6 C:\wamp\www\unitarius\src\Core\Router.php(36): call_user_func(Array)
+#7 C:\wamp\www\unitarius\public\index.php(77): Core\Router->dispatch('GET', '/unitarius')
+#8 {main}
+
+[2025-09-21T17:33:08+00:00] syntax error, unexpected identifier "manifest", expecting "function" in C:\wamp\www\unitarius\src\Core\MenuLoader.php:11
+Stack:
+#0 C:\wamp\www\unitarius\vendor\composer\ClassLoader.php(427): Composer\Autoload\{closure}('C:\\wamp\\www\\uni...')
+#1 C:\wamp\www\unitarius\app\Views\partials\sidebar.php(9): Composer\Autoload\ClassLoader->loadClass('Core\\MenuLoader')
+#2 C:\wamp\www\unitarius\app\Views\layout.php(43): require('C:\\wamp\\www\\uni...')
+#3 C:\wamp\www\unitarius\src\Core\View.php(75): require('C:\\wamp\\www\\uni...')
+#4 C:\wamp\www\unitarius\app\Controllers\DashboardController.php(24): Core\View::render('dashboard/index', Array)
+#5 [internal function]: App\Controllers\DashboardController->index()
+#6 C:\wamp\www\unitarius\src\Core\Router.php(36): call_user_func(Array)
+#7 C:\wamp\www\unitarius\public\index.php(77): Core\Router->dispatch('GET', '/unitarius')
+#8 {main}
+
+[2025-09-21T17:33:09+00:00] syntax error, unexpected identifier "manifest", expecting "function" in C:\wamp\www\unitarius\src\Core\MenuLoader.php:11
+Stack:
+#0 C:\wamp\www\unitarius\vendor\composer\ClassLoader.php(427): Composer\Autoload\{closure}('C:\\wamp\\www\\uni...')
+#1 C:\wamp\www\unitarius\app\Views\partials\sidebar.php(9): Composer\Autoload\ClassLoader->loadClass('Core\\MenuLoader')
+#2 C:\wamp\www\unitarius\app\Views\layout.php(43): require('C:\\wamp\\www\\uni...')
+#3 C:\wamp\www\unitarius\src\Core\View.php(75): require('C:\\wamp\\www\\uni...')
+#4 C:\wamp\www\unitarius\app\Controllers\DashboardController.php(24): Core\View::render('dashboard/index', Array)
+#5 [internal function]: App\Controllers\DashboardController->index()
+#6 C:\wamp\www\unitarius\src\Core\Router.php(36): call_user_func(Array)
+#7 C:\wamp\www\unitarius\public\index.php(77): Core\Router->dispatch('GET', '/unitarius')
+#8 {main}
+
+[2025-09-21T17:33:10+00:00] syntax error, unexpected identifier "manifest", expecting "function" in C:\wamp\www\unitarius\src\Core\MenuLoader.php:11
+Stack:
+#0 C:\wamp\www\unitarius\vendor\composer\ClassLoader.php(427): Composer\Autoload\{closure}('C:\\wamp\\www\\uni...')
+#1 C:\wamp\www\unitarius\app\Views\partials\sidebar.php(9): Composer\Autoload\ClassLoader->loadClass('Core\\MenuLoader')
+#2 C:\wamp\www\unitarius\app\Views\layout.php(43): require('C:\\wamp\\www\\uni...')
+#3 C:\wamp\www\unitarius\src\Core\View.php(75): require('C:\\wamp\\www\\uni...')
+#4 C:\wamp\www\unitarius\app\Controllers\DashboardController.php(24): Core\View::render('dashboard/index', Array)
+#5 [internal function]: App\Controllers\DashboardController->index()
+#6 C:\wamp\www\unitarius\src\Core\Router.php(36): call_user_func(Array)
+#7 C:\wamp\www\unitarius\public\index.php(77): Core\Router->dispatch('GET', '/unitarius')
+#8 {main}
+
+[2025-09-21T17:33:10+00:00] syntax error, unexpected identifier "manifest", expecting "function" in C:\wamp\www\unitarius\src\Core\MenuLoader.php:11
+Stack:
+#0 C:\wamp\www\unitarius\vendor\composer\ClassLoader.php(427): Composer\Autoload\{closure}('C:\\wamp\\www\\uni...')
+#1 C:\wamp\www\unitarius\app\Views\partials\sidebar.php(9): Composer\Autoload\ClassLoader->loadClass('Core\\MenuLoader')
+#2 C:\wamp\www\unitarius\app\Views\layout.php(43): require('C:\\wamp\\www\\uni...')
+#3 C:\wamp\www\unitarius\src\Core\View.php(75): require('C:\\wamp\\www\\uni...')
+#4 C:\wamp\www\unitarius\app\Controllers\DashboardController.php(24): Core\View::render('dashboard/index', Array)
+#5 [internal function]: App\Controllers\DashboardController->index()
+#6 C:\wamp\www\unitarius\src\Core\Router.php(36): call_user_func(Array)
+#7 C:\wamp\www\unitarius\public\index.php(77): Core\Router->dispatch('GET', '/unitarius')
+#8 {main}
+
+[2025-09-21T17:33:11+00:00] syntax error, unexpected identifier "manifest", expecting "function" in C:\wamp\www\unitarius\src\Core\MenuLoader.php:11
+Stack:
+#0 C:\wamp\www\unitarius\vendor\composer\ClassLoader.php(427): Composer\Autoload\{closure}('C:\\wamp\\www\\uni...')
+#1 C:\wamp\www\unitarius\app\Views\partials\sidebar.php(9): Composer\Autoload\ClassLoader->loadClass('Core\\MenuLoader')
+#2 C:\wamp\www\unitarius\app\Views\layout.php(43): require('C:\\wamp\\www\\uni...')
+#3 C:\wamp\www\unitarius\src\Core\View.php(75): require('C:\\wamp\\www\\uni...')
+#4 C:\wamp\www\unitarius\app\Controllers\DashboardController.php(24): Core\View::render('dashboard/index', Array)
+#5 [internal function]: App\Controllers\DashboardController->index()
+#6 C:\wamp\www\unitarius\src\Core\Router.php(36): call_user_func(Array)
+#7 C:\wamp\www\unitarius\public\index.php(77): Core\Router->dispatch('GET', '/unitarius')
+#8 {main}
+
+[2025-09-21T17:33:11+00:00] syntax error, unexpected identifier "manifest", expecting "function" in C:\wamp\www\unitarius\src\Core\MenuLoader.php:11
+Stack:
+#0 C:\wamp\www\unitarius\vendor\composer\ClassLoader.php(427): Composer\Autoload\{closure}('C:\\wamp\\www\\uni...')
+#1 C:\wamp\www\unitarius\app\Views\partials\sidebar.php(9): Composer\Autoload\ClassLoader->loadClass('Core\\MenuLoader')
+#2 C:\wamp\www\unitarius\app\Views\layout.php(43): require('C:\\wamp\\www\\uni...')
+#3 C:\wamp\www\unitarius\src\Core\View.php(75): require('C:\\wamp\\www\\uni...')
+#4 C:\wamp\www\unitarius\app\Controllers\DashboardController.php(24): Core\View::render('dashboard/index', Array)
+#5 [internal function]: App\Controllers\DashboardController->index()
+#6 C:\wamp\www\unitarius\src\Core\Router.php(36): call_user_func(Array)
+#7 C:\wamp\www\unitarius\public\index.php(77): Core\Router->dispatch('GET', '/unitarius')
+#8 {main}
+
