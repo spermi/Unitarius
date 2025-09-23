@@ -12,6 +12,11 @@ final class Router
         $this->map('GET', $this->normalize($path), $handler);
     }
 
+    public function post(string $path, callable|array $handler): void
+    {
+        $this->map('POST', $this->normalize($path), $handler);
+    }
+
     private function map(string $method, string $path, callable|array $handler): void
     {
         $this->routes[$method][$path] = $handler;
@@ -19,7 +24,8 @@ final class Router
 
     public function dispatch(string $method, string $uri): void
     {
-        $path = $this->requestPath($uri);
+        $method  = strtoupper($method);
+        $path    = $this->requestPath($uri);
 
         $handler = $this->routes[$method][$path] ?? null;
         if ($handler === null) {
@@ -41,7 +47,7 @@ final class Router
         $path = parse_url($uri, PHP_URL_PATH) ?? '/';
 
         // Derive app base from SCRIPT_NAME, trimming trailing /public or /public/index.php
-        $script = $_SERVER['SCRIPT_NAME'] ?? '';
+        $script  = $_SERVER['SCRIPT_NAME'] ?? '';
         $appBase = preg_replace('#/public(?:/index\.php)?$#', '', $script) ?? '';
         $appBase = rtrim($appBase, '/');
 

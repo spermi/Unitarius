@@ -193,3 +193,187 @@ Stack:
 #4 C:\wamp\www\unitarius\public\index.php(77): Core\Router->dispatch('GET', '/unitarius')
 #5 {main}
 
+[2025-09-23T11:47:25+00:00] Call to undefined method Core\Router::post() in C:\wamp\www\unitarius\public\index.php:103
+Stack:
+#0 {main}
+
+[2025-09-23T12:30:24+00:00] Call to undefined method Core\Router::post() in C:\wamp\www\unitarius\public\index.php:103
+Stack:
+#0 {main}
+
+[2025-09-23T12:40:12+00:00] Call to undefined method Core\Router::post() in C:\wamp\www\unitarius\public\index.php:103
+Stack:
+#0 {main}
+
+[2025-09-23T12:40:13+00:00] Call to undefined method Core\Router::post() in C:\wamp\www\unitarius\public\index.php:103
+Stack:
+#0 {main}
+
+[2025-09-23T12:40:13+00:00] Call to undefined method Core\Router::post() in C:\wamp\www\unitarius\public\index.php:103
+Stack:
+#0 {main}
+
+[2025-09-23T12:40:13+00:00] Call to undefined method Core\Router::post() in C:\wamp\www\unitarius\public\index.php:103
+Stack:
+#0 {main}
+
+[2025-09-23T12:40:14+00:00] Call to undefined method Core\Router::post() in C:\wamp\www\unitarius\public\index.php:103
+Stack:
+#0 {main}
+
+[2025-09-23T12:40:24+00:00] Call to undefined method Core\Router::post() in C:\wamp\www\unitarius\public\index.php:103
+Stack:
+#0 {main}
+
+[2025-09-23T12:40:24+00:00] Call to undefined method Core\Router::post() in C:\wamp\www\unitarius\public\index.php:103
+Stack:
+#0 {main}
+
+[2025-09-23T12:40:25+00:00] Call to undefined method Core\Router::post() in C:\wamp\www\unitarius\public\index.php:103
+Stack:
+#0 {main}
+
+[2025-09-23T12:44:10+00:00] Call to undefined method Core\Router::post() in C:\wamp\www\unitarius\public\index.php:103
+Stack:
+#0 {main}
+
+[2025-09-23T12:44:10+00:00] Call to undefined method Core\Router::post() in C:\wamp\www\unitarius\public\index.php:103
+Stack:
+#0 {main}
+
+[2025-09-23T12:44:10+00:00] Call to undefined method Core\Router::post() in C:\wamp\www\unitarius\public\index.php:103
+Stack:
+#0 {main}
+
+[2025-09-23T12:52:00+00:00] Call to undefined method Core\Router::post() in C:\wamp\www\unitarius\public\index.php:103
+Stack:
+#0 {main}
+
+[2025-09-23T12:52:01+00:00] Call to undefined method Core\Router::post() in C:\wamp\www\unitarius\public\index.php:103
+Stack:
+#0 {main}
+
+[2025-09-23T12:52:01+00:00] Call to undefined method Core\Router::post() in C:\wamp\www\unitarius\public\index.php:103
+Stack:
+#0 {main}
+
+[2025-09-23T12:52:01+00:00] Call to undefined method Core\Router::post() in C:\wamp\www\unitarius\public\index.php:103
+Stack:
+#0 {main}
+
+[2025-09-23T12:53:15+00:00] Call to undefined method Core\Router::post() in C:\wamp\www\unitarius\public\index.php:103
+Stack:
+#0 {main}
+
+[2025-09-23T12:53:15+00:00] Call to undefined method Core\Router::post() in C:\wamp\www\unitarius\public\index.php:103
+Stack:
+#0 {main}
+
+[2025-09-23T12:53:15+00:00] Call to undefined method Core\Router::post() in C:\wamp\www\unitarius\public\index.php:103
+Stack:
+#0 {main}
+
+[2025-09-23T12:53:16+00:00] Call to undefined method Core\Router::post() in C:\wamp\www\unitarius\public\index.php:103
+Stack:
+#0 {main}
+
+[2025-09-23T12:53:17+00:00] Call to undefined method Core\Router::post() in C:\wamp\www\unitarius\public\index.php:103
+Stack:
+#0 {main}
+
+[2025-09-23T12:53:17+00:00] Call to undefined method Core\Router::post() in C:\wamp\www\unitarius\public\index.php:103
+Stack:
+#0 {main}
+
+[2025-09-23T12:53:17+00:00] Call to undefined method Core\Router::post() in C:\wamp\www\unitarius\public\index.php:103
+Stack:
+#0 {main}
+
+[2025-09-23T12:53:17+00:00] Call to undefined method Core\Router::post() in C:\wamp\www\unitarius\public\index.php:103
+Stack:
+#0 {main}
+
+[2025-09-23T14:39:16+00:00] http_response_code(): Cannot set response code - headers already sent (output started at C:\wamp\www\unitarius\src\Core\Router.php:42) in C:\wamp\www\unitarius\src\Core\Response.php:17
+Stack:
+#0 [internal function]: Core\ErrorHandler::{closure:Core\ErrorHandler::register():15}(2, 'http_response_c...', 'C:\\wamp\\www\\uni...', 17)
+#1 C:\wamp\www\unitarius\src\Core\Response.php(17): http_response_code(500)
+#2 C:\wamp\www\unitarius\public\index.php(150): Core\Response->send()
+#3 {main}
+
+[2025-09-23T14:39:40+00:00] http_response_code(): Cannot set response code - headers already sent (output started at C:\wamp\www\unitarius\src\Core\Router.php:42) in C:\wamp\www\unitarius\src\Core\Response.php:17
+Stack:
+#0 [internal function]: Core\ErrorHandler::{closure:Core\ErrorHandler::register():15}(2, 'http_response_c...', 'C:\\wamp\\www\\uni...', 17)
+#1 C:\wamp\www\unitarius\src\Core\Response.php(17): http_response_code(500)
+#2 C:\wamp\www\unitarius\public\index.php(150): Core\Response->send()
+#3 {main}
+
+[2025-09-23T14:39:46+00:00] http_response_code(): Cannot set response code - headers already sent (output started at C:\wamp\www\unitarius\src\Core\Router.php:42) in C:\wamp\www\unitarius\src\Core\Response.php:17
+Stack:
+#0 [internal function]: Core\ErrorHandler::{closure:Core\ErrorHandler::register():15}(2, 'http_response_c...', 'C:\\wamp\\www\\uni...', 17)
+#1 C:\wamp\www\unitarius\src\Core\Response.php(17): http_response_code(500)
+#2 C:\wamp\www\unitarius\public\index.php(150): Core\Response->send()
+#3 {main}
+
+[2025-09-23T14:40:04+00:00] http_response_code(): Cannot set response code - headers already sent (output started at C:\wamp\www\unitarius\src\Core\Router.php:42) in C:\wamp\www\unitarius\src\Core\Response.php:17
+Stack:
+#0 [internal function]: Core\ErrorHandler::{closure:Core\ErrorHandler::register():15}(2, 'http_response_c...', 'C:\\wamp\\www\\uni...', 17)
+#1 C:\wamp\www\unitarius\src\Core\Response.php(17): http_response_code(500)
+#2 C:\wamp\www\unitarius\public\index.php(150): Core\Response->send()
+#3 {main}
+
+[2025-09-23T14:52:29+00:00] http_response_code(): Cannot set response code - headers already sent (output started at C:\wamp\www\unitarius\src\Core\Router.php:42) in C:\wamp\www\unitarius\src\Core\Response.php:17
+Stack:
+#0 [internal function]: Core\ErrorHandler::{closure:Core\ErrorHandler::register():15}(2, 'http_response_c...', 'C:\\wamp\\www\\uni...', 17)
+#1 C:\wamp\www\unitarius\src\Core\Response.php(17): http_response_code(500)
+#2 C:\wamp\www\unitarius\public\index.php(140): Core\Response->send()
+#3 {main}
+
+[2025-09-23T14:52:29+00:00] http_response_code(): Cannot set response code - headers already sent (output started at C:\wamp\www\unitarius\src\Core\Router.php:42) in C:\wamp\www\unitarius\src\Core\Response.php:17
+Stack:
+#0 [internal function]: Core\ErrorHandler::{closure:Core\ErrorHandler::register():15}(2, 'http_response_c...', 'C:\\wamp\\www\\uni...', 17)
+#1 C:\wamp\www\unitarius\src\Core\Response.php(17): http_response_code(500)
+#2 C:\wamp\www\unitarius\public\index.php(140): Core\Response->send()
+#3 {main}
+
+[2025-09-23T14:52:32+00:00] http_response_code(): Cannot set response code - headers already sent (output started at C:\wamp\www\unitarius\src\Core\Router.php:42) in C:\wamp\www\unitarius\src\Core\Response.php:17
+Stack:
+#0 [internal function]: Core\ErrorHandler::{closure:Core\ErrorHandler::register():15}(2, 'http_response_c...', 'C:\\wamp\\www\\uni...', 17)
+#1 C:\wamp\www\unitarius\src\Core\Response.php(17): http_response_code(500)
+#2 C:\wamp\www\unitarius\public\index.php(140): Core\Response->send()
+#3 {main}
+
+[2025-09-23T14:52:35+00:00] http_response_code(): Cannot set response code - headers already sent (output started at C:\wamp\www\unitarius\src\Core\Router.php:42) in C:\wamp\www\unitarius\src\Core\Response.php:17
+Stack:
+#0 [internal function]: Core\ErrorHandler::{closure:Core\ErrorHandler::register():15}(2, 'http_response_c...', 'C:\\wamp\\www\\uni...', 17)
+#1 C:\wamp\www\unitarius\src\Core\Response.php(17): http_response_code(500)
+#2 C:\wamp\www\unitarius\public\index.php(140): Core\Response->send()
+#3 {main}
+
+[2025-09-23T14:52:37+00:00] http_response_code(): Cannot set response code - headers already sent (output started at C:\wamp\www\unitarius\src\Core\Router.php:42) in C:\wamp\www\unitarius\src\Core\Response.php:17
+Stack:
+#0 [internal function]: Core\ErrorHandler::{closure:Core\ErrorHandler::register():15}(2, 'http_response_c...', 'C:\\wamp\\www\\uni...', 17)
+#1 C:\wamp\www\unitarius\src\Core\Response.php(17): http_response_code(500)
+#2 C:\wamp\www\unitarius\public\index.php(140): Core\Response->send()
+#3 {main}
+
+[2025-09-23T14:53:14+00:00] http_response_code(): Cannot set response code - headers already sent (output started at C:\wamp\www\unitarius\src\Core\Router.php:42) in C:\wamp\www\unitarius\src\Core\Response.php:17
+Stack:
+#0 [internal function]: Core\ErrorHandler::{closure:Core\ErrorHandler::register():15}(2, 'http_response_c...', 'C:\\wamp\\www\\uni...', 17)
+#1 C:\wamp\www\unitarius\src\Core\Response.php(17): http_response_code(500)
+#2 C:\wamp\www\unitarius\public\index.php(140): Core\Response->send()
+#3 {main}
+
+[2025-09-23T14:53:17+00:00] http_response_code(): Cannot set response code - headers already sent (output started at C:\wamp\www\unitarius\src\Core\Router.php:42) in C:\wamp\www\unitarius\src\Core\Response.php:17
+Stack:
+#0 [internal function]: Core\ErrorHandler::{closure:Core\ErrorHandler::register():15}(2, 'http_response_c...', 'C:\\wamp\\www\\uni...', 17)
+#1 C:\wamp\www\unitarius\src\Core\Response.php(17): http_response_code(500)
+#2 C:\wamp\www\unitarius\public\index.php(140): Core\Response->send()
+#3 {main}
+
+[2025-09-23T14:53:19+00:00] http_response_code(): Cannot set response code - headers already sent (output started at C:\wamp\www\unitarius\src\Core\Router.php:42) in C:\wamp\www\unitarius\src\Core\Response.php:17
+Stack:
+#0 [internal function]: Core\ErrorHandler::{closure:Core\ErrorHandler::register():15}(2, 'http_response_c...', 'C:\\wamp\\www\\uni...', 17)
+#1 C:\wamp\www\unitarius\src\Core\Response.php(17): http_response_code(500)
+#2 C:\wamp\www\unitarius\public\index.php(140): Core\Response->send()
+#3 {main}
+
