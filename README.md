@@ -371,3 +371,68 @@ This approach is simpler and more scalable than per-user ACLs.
 - Validator (basic form validation).  
 - Security middleware (CSRF tokens, security headers).  
 - (Optional) CLI commands (e.g. `bin/console migrate`).  
+
+
+
+
+## Authentication & Sessions
+
+### Session bootstrap
+- Implemented in `public/index.php`.
+- Secure cookie parameters: `httponly`, `samesite=Lax`, `secure` (if HTTPS).
+- Session files stored in `storage/sessions/`.
+
+### Auth helpers
+Added to `src/Core/Helpers.php`:
+- `current_user(): ?array` — returns logged in user or null.
+- `is_logged_in(): bool` — quick check for authentication state.
+- `login_user(array $user): void` — regenerates session id, stores user payload, updates `last_login_at`.
+- `logout_user(): void` — clears session and destroys cookie.
+
+### Middleware
+New middleware classes in `src/Http/Middleware/`:
+- `AuthRequired` — protects routes, redirects unauthenticated users to `/login`.
+- `GuestOnly` — prevents logged in users from accessing `/login`.
+
+Both implement `Core\Middleware` interface.
+
+### AuthController
+File: `app/Controllers/AuthController.php`  
+Provides:
+- `showLogin()` — renders login form (`app/Views/auth/login.php`).
+- `doLogin()` — validates credentials, logs user in via helpers.
+- `logout()` — logs user out and redirects to `/login`.
+
+### Routes
+Defined in `public/index.php`:
+- `GET /login` → AuthController::showLogin
+- `POST /login` → AuthController::doLogin
+- `POST /logout` → AuthController::logout
+
+### Users table
+PostgreSQL schema (simplified):
+```sql
+CREATE TABLE users (
+    id BIGSERIAL PRIMARY KEY,
+    email VARCHAR(255) UNIQUE NOT NULL,
+    password_hash VARCHAR(255) NOT NULL,
+    name VARCHAR(255) NOT NULL,
+    status SMALLINT NOT NULL DEFAULT 1,
+    last_login_at TIMESTAMPTZ NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+```
+
+Test user example (password: `tengerimalac`):
+```sql
+INSERT INTO users (email, password_hash, name, status, created_at, updated_at)
+VALUES (
+  'kovacszsoltsp@gmail.com',
+  crypt('tengerimalac', gen_salt('bf', 12)),
+  'Admin',
+  1,
+  NOW(),
+  NOW()
+);
+```
