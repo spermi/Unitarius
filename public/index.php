@@ -106,6 +106,7 @@ foreach (glob($basePath . '/app/Apps/*/routes.php') as $file) {
 $router->get('/', [DashboardController::class, 'index']);
 $router->get('/login',  [AuthController::class, 'showLogin']);
 $router->post('/login', [AuthController::class, 'doLogin']);
+$router->get('/logout', [AuthController::class, 'logout']);
 $router->post('/logout', [AuthController::class, 'logout']);
 
 // ---------------------------------------------------------
