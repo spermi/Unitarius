@@ -18,6 +18,9 @@
     <meta name="supported-color-schemes" content="light dark" >
     <link rel="stylesheet" href="<?= base_url('public/assets/adminlte/css/adminlte.css') ?>" >
     <!--end::Accessibility Features-->
+    <!--begin:: Custom css-->
+    <link rel="stylesheet" href="<?= base_url('public/assets/css/custom.css') ?>">
+    <!--end:: Constom css->
      <!--begin::Fonts-->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/source-sans-3@5.0.12/index.css" integrity="sha256-tXJfXfp6Ewt1ilPzLDtQnJV4hclT9XuaZUKyUvmyr+Q=" crossorigin="anonymous" media="print" onload="this.media='all'" >
     <!--end::Fonts-->
@@ -35,7 +38,7 @@
   </head>
   <!--end::Head-->
   <!--begin::Body-->
-  <body class="layout-fixed sidebar-expand-lg hold-transition sidebar-mini bg-body-tertiary">
+  <body class="layout-fixed sidebar-expand-lg sidebar-mini bg-body-tertiary">
     <!--begin::App Wrapper-->
     <div class="app-wrapper">
 

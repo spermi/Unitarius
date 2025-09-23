@@ -94,3 +94,102 @@ Stack:
 #7 C:\wamp\www\unitarius\public\index.php(77): Core\Router->dispatch('GET', '/unitarius')
 #8 {main}
 
+[2025-09-23T07:17:52+00:00] could not find driver in C:\wamp\www\unitarius\src\Core\DB.php:25
+Stack:
+#0 C:\wamp\www\unitarius\src\Core\DB.php(25): PDO->__construct('pgsql:host=loca...', 'postgres', Object(SensitiveParameterValue), Array)
+#1 C:\wamp\www\unitarius\app\Controllers\DashboardController.php(16): Core\DB::pdo()
+#2 [internal function]: App\Controllers\DashboardController->index()
+#3 C:\wamp\www\unitarius\src\Core\Router.php(36): call_user_func(Array)
+#4 C:\wamp\www\unitarius\public\index.php(77): Core\Router->dispatch('GET', '/unitarius')
+#5 {main}
+
+[2025-09-23T07:18:09+00:00] could not find driver in C:\wamp\www\unitarius\src\Core\DB.php:25
+Stack:
+#0 C:\wamp\www\unitarius\src\Core\DB.php(25): PDO->__construct('pgsql:host=loca...', 'postgres', Object(SensitiveParameterValue), Array)
+#1 C:\wamp\www\unitarius\app\Controllers\DashboardController.php(16): Core\DB::pdo()
+#2 [internal function]: App\Controllers\DashboardController->index()
+#3 C:\wamp\www\unitarius\src\Core\Router.php(36): call_user_func(Array)
+#4 C:\wamp\www\unitarius\public\index.php(77): Core\Router->dispatch('GET', '/unitarius')
+#5 {main}
+
+[2025-09-23T07:18:09+00:00] could not find driver in C:\wamp\www\unitarius\src\Core\DB.php:25
+Stack:
+#0 C:\wamp\www\unitarius\src\Core\DB.php(25): PDO->__construct('pgsql:host=loca...', 'postgres', Object(SensitiveParameterValue), Array)
+#1 C:\wamp\www\unitarius\app\Controllers\DashboardController.php(16): Core\DB::pdo()
+#2 [internal function]: App\Controllers\DashboardController->index()
+#3 C:\wamp\www\unitarius\src\Core\Router.php(36): call_user_func(Array)
+#4 C:\wamp\www\unitarius\public\index.php(77): Core\Router->dispatch('GET', '/unitarius')
+#5 {main}
+
+[2025-09-23T07:18:27+00:00] could not find driver in C:\wamp\www\unitarius\src\Core\DB.php:25
+Stack:
+#0 C:\wamp\www\unitarius\src\Core\DB.php(25): PDO->__construct('pgsql:host=loca...', 'postgres', Object(SensitiveParameterValue), Array)
+#1 C:\wamp\www\unitarius\app\Controllers\DashboardController.php(16): Core\DB::pdo()
+#2 [internal function]: App\Controllers\DashboardController->index()
+#3 C:\wamp\www\unitarius\src\Core\Router.php(36): call_user_func(Array)
+#4 C:\wamp\www\unitarius\public\index.php(77): Core\Router->dispatch('GET', '/unitarius')
+#5 {main}
+
+[2025-09-23T07:18:28+00:00] could not find driver in C:\wamp\www\unitarius\src\Core\DB.php:25
+Stack:
+#0 C:\wamp\www\unitarius\src\Core\DB.php(25): PDO->__construct('pgsql:host=loca...', 'postgres', Object(SensitiveParameterValue), Array)
+#1 C:\wamp\www\unitarius\app\Controllers\DashboardController.php(16): Core\DB::pdo()
+#2 [internal function]: App\Controllers\DashboardController->index()
+#3 C:\wamp\www\unitarius\src\Core\Router.php(36): call_user_func(Array)
+#4 C:\wamp\www\unitarius\public\index.php(77): Core\Router->dispatch('GET', '/unitarius')
+#5 {main}
+
+[2025-09-23T07:18:28+00:00] could not find driver in C:\wamp\www\unitarius\src\Core\DB.php:25
+Stack:
+#0 C:\wamp\www\unitarius\src\Core\DB.php(25): PDO->__construct('pgsql:host=loca...', 'postgres', Object(SensitiveParameterValue), Array)
+#1 C:\wamp\www\unitarius\app\Controllers\DashboardController.php(16): Core\DB::pdo()
+#2 [internal function]: App\Controllers\DashboardController->index()
+#3 C:\wamp\www\unitarius\src\Core\Router.php(36): call_user_func(Array)
+#4 C:\wamp\www\unitarius\public\index.php(77): Core\Router->dispatch('GET', '/unitarius')
+#5 {main}
+
+[2025-09-23T07:18:30+00:00] could not find driver in C:\wamp\www\unitarius\src\Core\DB.php:25
+Stack:
+#0 C:\wamp\www\unitarius\src\Core\DB.php(25): PDO->__construct('pgsql:host=loca...', 'postgres', Object(SensitiveParameterValue), Array)
+#1 C:\wamp\www\unitarius\app\Controllers\DashboardController.php(16): Core\DB::pdo()
+#2 [internal function]: App\Controllers\DashboardController->index()
+#3 C:\wamp\www\unitarius\src\Core\Router.php(36): call_user_func(Array)
+#4 C:\wamp\www\unitarius\public\index.php(77): Core\Router->dispatch('GET', '/unitarius')
+#5 {main}
+
+[2025-09-23T07:28:41+00:00] could not find driver in C:\wamp\www\unitarius\src\Core\DB.php:25
+Stack:
+#0 C:\wamp\www\unitarius\src\Core\DB.php(25): PDO->__construct('pgsql:host=loca...', 'postgres', Object(SensitiveParameterValue), Array)
+#1 C:\wamp\www\unitarius\app\Controllers\DashboardController.php(16): Core\DB::pdo()
+#2 [internal function]: App\Controllers\DashboardController->index()
+#3 C:\wamp\www\unitarius\src\Core\Router.php(36): call_user_func(Array)
+#4 C:\wamp\www\unitarius\public\index.php(77): Core\Router->dispatch('GET', '/unitarius')
+#5 {main}
+
+[2025-09-23T07:29:12+00:00] could not find driver in C:\wamp\www\unitarius\src\Core\DB.php:25
+Stack:
+#0 C:\wamp\www\unitarius\src\Core\DB.php(25): PDO->__construct('pgsql:host=loca...', 'postgres', Object(SensitiveParameterValue), Array)
+#1 C:\wamp\www\unitarius\app\Controllers\DashboardController.php(16): Core\DB::pdo()
+#2 [internal function]: App\Controllers\DashboardController->index()
+#3 C:\wamp\www\unitarius\src\Core\Router.php(36): call_user_func(Array)
+#4 C:\wamp\www\unitarius\public\index.php(77): Core\Router->dispatch('GET', '/unitarius')
+#5 {main}
+
+[2025-09-23T07:29:28+00:00] could not find driver in C:\wamp\www\unitarius\src\Core\DB.php:25
+Stack:
+#0 C:\wamp\www\unitarius\src\Core\DB.php(25): PDO->__construct('pgsql:host=loca...', 'postgres', Object(SensitiveParameterValue), Array)
+#1 C:\wamp\www\unitarius\app\Controllers\DashboardController.php(16): Core\DB::pdo()
+#2 [internal function]: App\Controllers\DashboardController->index()
+#3 C:\wamp\www\unitarius\src\Core\Router.php(36): call_user_func(Array)
+#4 C:\wamp\www\unitarius\public\index.php(77): Core\Router->dispatch('GET', '/unitarius')
+#5 {main}
+
+[2025-09-23T07:29:31+00:00] could not find driver in C:\wamp\www\unitarius\src\Core\DB.php:25
+Stack:
+#0 C:\wamp\www\unitarius\src\Core\DB.php(25): PDO->__construct('pgsql:host=loca...', 'postgres', Object(SensitiveParameterValue), Array)
+#1 C:\wamp\www\unitarius\app\Controllers\DashboardController.php(16): Core\DB::pdo()
+#2 [internal function]: App\Controllers\DashboardController->index()
+#3 C:\wamp\www\unitarius\src\Core\Router.php(36): call_user_func(Array)
+#4 C:\wamp\www\unitarius\public\index.php(77): Core\Router->dispatch('GET', '/unitarius')
+#5 {main}
+
