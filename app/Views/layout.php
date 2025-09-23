@@ -35,7 +35,7 @@
   </head>
   <!--end::Head-->
   <!--begin::Body-->
-  <body class="layout-fixed sidebar-expand-lg sidebar-open bg-body-tertiary">
+  <body class="layout-fixed sidebar-expand-lg hold-transition sidebar-mini bg-body-tertiary">
     <!--begin::App Wrapper-->
     <div class="app-wrapper">
 

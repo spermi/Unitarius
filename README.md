@@ -7,7 +7,7 @@ Minimal PHP microframework built from scratch for learning and internal use.
 ## Development Environment 
 
 - Windows + VSCode
-- WampServer (Apache + PHP 8.3.14)
+- WampServer (Apache + PHP 8.4)
 - PostgreSQL
 - Composer 2.8.11
 - AdminLTE V4
