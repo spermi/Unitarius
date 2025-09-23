@@ -121,3 +121,43 @@ SELECT person_id, person_uuid, display_name, status FROM persons;
 - **Törlés**: `deleted_at` kitöltésével (rekord bent marad).
 - **Anonimizálás**: `anonymized_at` kitöltése + érzékeny mezők törlése/maszkolása.
 - **Következő lépés**: kapcsolódó táblák (contacts, addresses, consents) definiálása.
+---
+
+
+Adatbazis implementalas
+
+Users table kezdetleges felepitese 23-09-2025
+```sql
+-- 1) Enable pgcrypto extension (required for crypt/gen_salt)
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
+-- 2) Create users table
+CREATE TABLE IF NOT EXISTS users (
+    id BIGSERIAL PRIMARY KEY,
+    email VARCHAR(255) NOT NULL UNIQUE,
+    password_hash VARCHAR(255) NOT NULL,
+    name VARCHAR(255) NOT NULL,
+    status SMALLINT NOT NULL DEFAULT 1,     -- 1 = active, 0 = disabled
+    last_login_at TIMESTAMPTZ NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- 3) Insert test user
+-- Password (plain): 'tengerimalac'
+-- The crypt(...) call stores a bcrypt hash generated with gen_salt('bf', 12)
+INSERT INTO users (email, password_hash, name, status, created_at, updated_at)
+VALUES (
+  'kovacszsoltsp@gmail.com',
+  crypt('tengerimalac', gen_salt('bf', 12)),
+  'Admin',
+  1,
+  NOW(),
+  NOW()
+);
+```
+Test if the enription is worked 
+``` sql 
+SELECT password_hash = crypt('tengerimalac', password_hash) AS match
+FROM users WHERE email = 'kovacszsoltsp@gmail.com';
+```
