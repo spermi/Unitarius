@@ -39,14 +39,17 @@ unitarius/
 │  │  └─ (more apps as needed)/
 │  ├─ Controllers/
 │  │  └─ DashboardController.php          # Global dashboard (replaces old HomeController)
+│  │  └─ AuthController.php               # Handles login form, login submission, logout
 │  ├─ Views/
 │  │  ├─ layout.php                       # Global AdminLTE layout (header/sidebar/content/footer)
 │  │  ├─ partials/
 │  │  │  ├─ navbar.php                    # AdminLTE top navbar (brand, user menu)
 │  │  │  ├─ sidebar.php                   # AdminLTE sidebar; dynamic, built via MenuLoader
 │  │  │  └─ breadcrumbs.php               # Simple breadcrumbs (optional)
-│  │  └─ dashboard/
-│  │     └─ index.php                     # Dashboard landing page content
+│  │  ├─ dashboard/
+│  │  │  └─ index.php                     # Dashboard landing page content
+│  │  └─ auth/
+│  │     └─ login.php                     # Login form view
 │  └─ errors/
 │     ├─ 404.php                          # Not found page
 │     └─ 500.php                          # Error page (used by ErrorCatcher)
@@ -83,10 +86,13 @@ unitarius/
 │  └─ Http/
 │     └─ Middleware/
 │        ├─ ErrorCatcher.php              # Catches exceptions, renders 500 (or JSON later)
-│        └─ TrailingSlash.php             # Redirects /foo/ → /foo
+│        ├─ TrailingSlash.php             # Redirects /foo/ → /foo
+│        ├─ AuthRequired.php              # Middleware: protect routes, require authentication
+│        └─ GuestOnly.php                 # Middleware: only guests allowed, redirect if logged in
 ├─ storage/
-│  └─ logs/
-│     └─ app.log                          # Application error log
+│  ├─ logs/
+│  │  └─ app.log                          # Application error log
+│  └─ sessions/                           # PHP session file storage
 ├─ tests/                                 # (future) PHPUnit tests
 ├─ composer.json                          # Autoload + deps (phpdotenv, etc.)
 ├─ .env                                   # Local environment config (APP_ENV, DB_*)
