@@ -1,6 +1,36 @@
 <?php
 declare(strict_types=1);
 
+// ---- Session bootstrap  ----
+// Optional: store sessions under /storage/sessions (make sure folder is writable)
+$sessionPath = dirname(__DIR__) . '/storage/sessions';
+if (is_dir($sessionPath) || @mkdir($sessionPath, 0777, true)) {
+    ini_set('session.save_path', $sessionPath);
+}
+
+// Strict + safer cookies
+ini_set('session.use_strict_mode', '1');
+ini_set('session.use_only_cookies', '1');
+ini_set('session.cookie_httponly', '1');
+
+// Set cookie samesite + secure (use secure only if HTTPS)
+$isHttps = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+           || (isset($_SERVER['SERVER_PORT']) && $_SERVER['SERVER_PORT'] == 443);
+
+session_name('UNITARIUSSESS');
+session_set_cookie_params([
+    'lifetime' => 0,                 // session cookie
+    'path'     => parse_url($_SERVER['BASE_URI'] ?? '/', PHP_URL_PATH) ?: '/',
+    'domain'   => '',                // default host
+    'secure'   => $isHttps,          // true on HTTPS
+    'httponly' => true,
+    'samesite' => 'Lax',             // or 'Strict' if you don't need cross-site
+]);
+
+session_start();
+// --------------------------------------------
+
+
 require __DIR__ . '/../vendor/autoload.php';
 require __DIR__ . '/../src/Core/Helpers.php';
 
