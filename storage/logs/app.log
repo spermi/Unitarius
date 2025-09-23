@@ -377,3 +377,10 @@ Stack:
 #2 C:\wamp\www\unitarius\public\index.php(140): Core\Response->send()
 #3 {main}
 
+[2025-09-23T14:56:06+00:00] http_response_code(): Cannot set response code - headers already sent (output started at C:\wamp\www\unitarius\src\Core\Router.php:42) in C:\wamp\www\unitarius\src\Core\Response.php:17
+Stack:
+#0 [internal function]: Core\ErrorHandler::{closure:Core\ErrorHandler::register():15}(2, 'http_response_c...', 'C:\\wamp\\www\\uni...', 17)
+#1 C:\wamp\www\unitarius\src\Core\Response.php(17): http_response_code(500)
+#2 C:\wamp\www\unitarius\public\index.php(140): Core\Response->send()
+#3 {main}
+
