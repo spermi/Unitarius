@@ -108,6 +108,7 @@ $router->get('/login',  [AuthController::class, 'showLogin']);
 $router->post('/login', [AuthController::class, 'doLogin']);
 $router->get('/logout', [AuthController::class, 'logout']);
 $router->post('/logout', [AuthController::class, 'logout']);
+
 // Favicon
 $router->get('/favicon.ico', fn() => file_get_contents(__DIR__ . '/favicon.ico'));
 
@@ -115,8 +116,7 @@ $router->get('/favicon.ico', fn() => file_get_contents(__DIR__ . '/favicon.ico')
 $router->get('/auth/google', [AuthController::class, 'googleRedirect']);
 $router->get('/auth/google/callback', [AuthController::class, 'googleCallback']);
 
-// Favicon
-$router->get('/favicon.ico', fn() => file_get_contents(__DIR__ . '/favicon.ico'));
+
 
 // ---------------------------------------------------------
 // Register all Apps view paths: app/Apps/*/Views

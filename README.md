@@ -111,7 +111,8 @@ unitarius/
   "license": "MIT",
   "require": {
     "php": "^8.3",
-    "vlucas/phpdotenv": "^5.6"
+    "vlucas/phpdotenv": "^5.6",
+    "google/apiclient": "^2.15"
   },
   "autoload": {
     "psr-4": {
@@ -134,12 +135,20 @@ composer dump-autoload -o
 ## .env Example
 
 ```
-APP_ENV=local  # or production 
+APP_ENV=local   # or production
+APP_URL=http://localhost/unitarius   # local dev URL
+# APP_BASE_PATH=/unitarius   # only if app runs in a subfolder
+
 DB_HOST=localhost
 DB_PORT=5432
 DB_NAME=org_unitarius_adatbazis
 DB_USER=postgres
 DB_PASS=postgres
+
+# Google OAuth
+GOOGLE_CLIENT_ID=your-google-client-id
+GOOGLE_CLIENT_SECRET=your-google-client-secret
+GOOGLE_REDIRECT_URI=http://localhost/unitarius/auth/google/callback
 ```
 
 ---
@@ -410,9 +419,14 @@ Provides:
 
 ### Routes
 Defined in `public/index.php`:
+- `GET /` → AuthController::index
 - `GET /login` → AuthController::showLogin
 - `POST /login` → AuthController::doLogin
 - `POST /logout` → AuthController::logout
+- `GET /logout` → AuthController::logout
+- `GET /auth/google` → AuthController::googleRedirect
+- `GET /auth/google/callback` → AuthController::googleCallback
+
 
 ### Users table
 PostgreSQL schema (simplified):
