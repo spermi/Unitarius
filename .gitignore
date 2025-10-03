@@ -2,4 +2,5 @@
 /storage/logs
 /Old_versioned_files
 /vendor/
+.env
 *.log
