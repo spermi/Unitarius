@@ -106,7 +106,17 @@ foreach (glob($basePath . '/app/Apps/*/routes.php') as $file) {
 $router->get('/', [DashboardController::class, 'index']);
 $router->get('/login',  [AuthController::class, 'showLogin']);
 $router->post('/login', [AuthController::class, 'doLogin']);
+$router->get('/logout', [AuthController::class, 'logout']);
 $router->post('/logout', [AuthController::class, 'logout']);
+// Favicon
+$router->get('/favicon.ico', fn() => file_get_contents(__DIR__ . '/favicon.ico'));
+
+// --- Google OAuth routes ---
+$router->get('/auth/google', [AuthController::class, 'googleRedirect']);
+$router->get('/auth/google/callback', [AuthController::class, 'googleCallback']);
+
+// Favicon
+$router->get('/favicon.ico', fn() => file_get_contents(__DIR__ . '/favicon.ico'));
 
 // ---------------------------------------------------------
 // Register all Apps view paths: app/Apps/*/Views
@@ -132,7 +142,16 @@ $res = $kernel->handle($req, function (Request $r) use ($router, $uriPath): Resp
     $auth->push(new AuthRequired());
 
     return $auth->handle($r, function (Request $rr) use ($router, $path): Response {
-        $html = $router->dispatch($rr->method(), $path); // ALWAYS use normalized $path
+        $html = $router->dispatch($rr->method(), $path); // returns ?string
+
+        if ($html === null) {
+            if (!headers_sent()) {
+                http_response_code(404);
+                header('Content-Type: text/html; charset=utf-8');
+            }
+            $html = '<h1>404 Not Found</h1>';
+        }
+
         return (new Response())->html($html);
     });
 });

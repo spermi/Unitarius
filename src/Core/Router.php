@@ -22,16 +22,19 @@ final class Router
         $this->routes[$method][$path] = $handler;
     }
 
-    public function dispatch(string $method, string $uri): void
+    /**
+     * Return the handler output as string, or null if no route matched.
+     * DO NOT send output here (no echo) – let front controller send it.
+     */
+    public function dispatch(string $method, string $uri): ?string
     {
         $method  = strtoupper($method);
         $path    = $this->requestPath($uri);
 
         $handler = $this->routes[$method][$path] ?? null;
         if ($handler === null) {
-            http_response_code(404);
-            echo '404 Not Found';
-            return;
+            // No headers / no echo here – let index.php decide (404 vs. custom page)
+            return null;
         }
 
         if (is_array($handler)) {
@@ -39,7 +42,11 @@ final class Router
             $handler = [new $class(), $action];
         }
 
-        echo (string) call_user_func($handler);
+        // Return the result, caller decides how to send
+        $result = call_user_func($handler);
+
+        // normalize to string
+        return is_string($result) ? $result : (string)$result;
     }
 
     private function requestPath(string $uri): string

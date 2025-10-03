@@ -11,7 +11,7 @@
     <meta name="theme-color" content="#007bff" media="(prefers-color-scheme: light)" >
     <meta name="theme-color" content="#1a1a1a" media="(prefers-color-scheme: dark)" >
     <!--end::Accessibility Meta Tags-->
-
+    <link rel="icon" href="<?= base_url('favicon.ico') ?>">
 
     <!--begin::Accessibility Features-->
     <!-- Skip links will be dynamically added by accessibility.js -->
@@ -21,7 +21,7 @@
     <!--begin:: Custom css-->
     <link rel="stylesheet" href="<?= base_url('public/assets/css/custom.css') ?>">
     <!--end:: Constom css->
-     <!--begin::Fonts-->
+    <!=-begin::Fonts-->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/source-sans-3@5.0.12/index.css" integrity="sha256-tXJfXfp6Ewt1ilPzLDtQnJV4hclT9XuaZUKyUvmyr+Q=" crossorigin="anonymous" media="print" onload="this.media='all'" >
     <!--end::Fonts-->
     <!--begin::Third Party Plugin(OverlayScrollbars CSS)-->
@@ -42,8 +42,12 @@
     <!--begin::App Wrapper-->
     <div class="app-wrapper">
 
-      <?php require dirname(__DIR__) . '/Views/partials/navbar.php'; ?>
-      <?php require dirname(__DIR__) . '/Views/partials/sidebar.php'; ?>
+<!-- Hide navbar and Sidebar if login page , need work
+  <?php if (is_logged_in()): ?>
+      <?php require dirname(__DIR__).'/Views/partials/navbar.php'; ?>
+      <?php require dirname(__DIR__).'/Views/partials/sidebar.php'; ?>
+  <?php endif; ?>
+
 
       <!-- Content Wrapper -->
       <div class="content-wrapper">

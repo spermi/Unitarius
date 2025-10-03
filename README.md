@@ -42,14 +42,13 @@ unitarius/
 │  │  └─ AuthController.php               # Handles login form, login submission, logout
 │  ├─ Views/
 │  │  ├─ layout.php                       # Global AdminLTE layout (header/sidebar/content/footer)
+│  │  ├─ login.php                        # standalone full-page view for the login screen; independent from the main `layout.php`.
 │  │  ├─ partials/
 │  │  │  ├─ navbar.php                    # AdminLTE top navbar (brand, user menu)
 │  │  │  ├─ sidebar.php                   # AdminLTE sidebar; dynamic, built via MenuLoader
 │  │  │  └─ breadcrumbs.php               # Simple breadcrumbs (optional)
 │  │  ├─ dashboard/
 │  │  │  └─ index.php                     # Dashboard landing page content
-│  │  └─ auth/
-│  │     └─ login.php                     # Login form view
 │  └─ errors/
 │     ├─ 404.php                          # Not found page
 │     └─ 500.php                          # Error page (used by ErrorCatcher)

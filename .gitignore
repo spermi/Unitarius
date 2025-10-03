@@ -1,3 +1,5 @@
 /storage
 /storage/logs
+/Old_versioned_files
+/vendor/
 *.log
