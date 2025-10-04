@@ -124,7 +124,7 @@ namespace {
     //                -> permissions(id, name)
     //
     // @return string[] permission names
-     //---------------------------------------------------------
+    //---------------------------------------------------------
     if (!function_exists('load_permissions_for_user')) {
         function load_permissions_for_user(int $userId): array {
             try {

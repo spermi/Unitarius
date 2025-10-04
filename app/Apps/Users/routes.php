@@ -9,11 +9,14 @@ use App\Apps\Users\Controllers\RbacController;
 /**
  * Users app routes
  *
- * Mounted by the framework's app loader.
+ * Mounted automatically by the framework's app loader.
  *
  * Endpoints:
- *  - GET /users  → Users listing (requires "users.view")
- *  - GET /rbac   → RBAC dashboard (requires "rbac.manage")
+ *  - GET /users                 → Users listing (requires "users.view")
+ *  - GET /rbac                  → RBAC dashboard (requires "rbac.manage")
+ *  - GET /rbac/roles            → Roles list
+ *  - GET /rbac/permissions      → Permissions list
+ *  - GET /rbac/assignments      → User/Role/Permission relationships
  *
  * Notes:
  *  - Uses route-level middleware: RequirePermission($perm)
@@ -21,15 +24,31 @@ use App\Apps\Users\Controllers\RbacController;
  */
 return static function (Router $router): void {
 
-    // Users list (protected)
+    // --- USERS LIST (protected) ---
     $router->get('/users', [
         new RequirePermission('users.view'),
         [UserController::class, 'index']
     ]);
 
-    // RBAC dashboard (protected)
+    // --- RBAC DASHBOARD (protected) ---
     $router->get('/rbac', [
         new RequirePermission('rbac.manage'),
         [RbacController::class, 'index']
+    ]);
+
+    // --- RBAC ADMIN SUBPAGES ---
+    $router->get('/rbac/roles', [
+        new RequirePermission('rbac.manage'),
+        [RbacController::class, 'roles']
+    ]);
+
+    $router->get('/rbac/permissions', [
+        new RequirePermission('rbac.manage'),
+        [RbacController::class, 'permissions']
+    ]);
+
+    $router->get('/rbac/assignments', [
+        new RequirePermission('rbac.manage'),
+        [RbacController::class, 'assignments']
     ]);
 };

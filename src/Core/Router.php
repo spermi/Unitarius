@@ -23,46 +23,67 @@ final class Router
     }
 
     /**
-     * Return the handler output as string, or null if no route matched.
-     * DO NOT send output here (no echo) – let front controller send it.
+     * Resolve a route into (callable handler, route middlewares).
+     *
+     * Supported specs:
+     *  1) callable (closure or [$object,'method'])
+     *  2) [ClassName::class, 'method']                       → instantiate class, call method
+     *  3) [MiddlewareInstance, [ClassName::class,'method']]  → collect middleware, then controller
+     *
+     * @return array{0: callable|null, 1: array<int,\Core\Middleware>} handler + route middlewares
      */
-    public function dispatch(string $method, string $uri): ?string
+    public function resolve(string $method, string $uri): array
     {
-        $method  = strtoupper($method);
-        $path    = $this->requestPath($uri);
+        $method = strtoupper($method);
+        $path   = $this->requestPath($uri);
 
-        $handler = $this->routes[$method][$path] ?? null;
-        if ($handler === null) {
-            // No headers / no echo here – let index.php decide (404 vs. custom page)
-            return null;
+        $spec = $this->routes[$method][$path] ?? null;
+        if ($spec === null) {
+            return [null, []];
         }
 
-        // Cases we support:
-        // 1) callable (closure or [obj,'method'])
-        // 2) [ClassName::class, 'method']               → instantiate class, call method
-        // 3) [MiddlewareInstance, [ClassName,'method']] → IGNORE middleware here, call controller
-        //    (Per-route middleware pipeline will be handled at Kernel level in a later step.)
-        if (is_array($handler)) {
+        $routeMw = [];
+        $handler = $spec;
 
-            // (3) route-level middleware array form → use only the controller spec for now
+        if (is_array($spec)) {
+            // (3) [MiddlewareInstance, [ClassName,'method']]
             if (
-                count($handler) === 2
-                && is_object($handler[0])                        // e.g. new RequirePermission('users.view')
-                && is_array($handler[1])                         // controller spec
-                && isset($handler[1][0], $handler[1][1])
+                count($spec) === 2
+                && is_object($spec[0])
+                && $spec[0] instanceof \Core\Middleware
+                && is_array($spec[1])
+                && isset($spec[1][0], $spec[1][1])
             ) {
-                $controllerSpec = $handler[1];
+                $routeMw[] = $spec[0];
+                $controllerSpec = $spec[1];
+
                 if (is_string($controllerSpec[0])) {
                     $handler = [new $controllerSpec[0](), $controllerSpec[1]];
                 } else {
                     $handler = $controllerSpec; // already callable like [$obj,'method']
                 }
             }
-            // (2) classic [ClassName::class, 'method']
-            elseif (isset($handler[0], $handler[1]) && is_string($handler[0]) && is_string($handler[1])) {
-                $handler = [new $handler[0](), $handler[1]];
+            // (2) [ClassName::class, 'method']
+            elseif (isset($spec[0], $spec[1]) && is_string($spec[0]) && is_string($spec[1])) {
+                $handler = [new $spec[0](), $spec[1]];
             }
             // else: assume it's already a valid callable (closure or [$obj,'method'])
+        }
+
+        return [$handler, $routeMw];
+    }
+
+    /**
+     * Backward-compatible dispatch.
+     * Uses resolve() but ignores per-route middleware (kept for BC).
+     * Prefer using resolve() + Kernel::handleWith() in the front controller.
+     */
+    public function dispatch(string $method, string $uri): ?string
+    {
+        [$handler, /* $routeMw */] = $this->resolve($method, $uri);
+        if ($handler === null) {
+            // No headers / no echo here – let index.php decide (404 vs. custom page)
+            return null;
         }
 
         // Return the result, caller decides how to send

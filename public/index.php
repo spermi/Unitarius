@@ -76,7 +76,7 @@ $baseSub = rtrim((string)($_ENV['APP_BASE_PATH'] ?? ''), '/');
 if ($baseSub === '') {
     $baseFromUrl = parse_url($_ENV['APP_URL'] ?? '', PHP_URL_PATH);
     if (is_string($baseFromUrl) && $baseFromUrl !== '') {
-        $baseSub = rtrim($baseFromUrl, '/'); // pl. "/unitarius"
+        $baseSub = rtrim($baseFromUrl, '/'); // e.g. "/unitarius"
     }
 }
 
@@ -116,8 +116,6 @@ $router->get('/favicon.ico', fn() => file_get_contents(__DIR__ . '/favicon.ico')
 $router->get('/auth/google', [AuthController::class, 'googleRedirect']);
 $router->get('/auth/google/callback', [AuthController::class, 'googleCallback']);
 
-
-
 // ---------------------------------------------------------
 // Register all Apps view paths: app/Apps/*/Views
 // ---------------------------------------------------------
@@ -137,22 +135,29 @@ $req = new Request();
 $res = $kernel->handle($req, function (Request $r) use ($router, $uriPath): Response {
     $path = $uriPath;
 
-    // Guest-only kezelést kivettük: az AuthRequired whitelisteli a /login-t.
-    $auth = new Kernel();
-    $auth->push(new AuthRequired());
+    // Resolve route handler + route-level middleware (if any)
+    [$callable, $routeMw] = $router->resolve($r->method(), $path);
 
-    return $auth->handle($r, function (Request $rr) use ($router, $path): Response {
-        $html = $router->dispatch($rr->method(), $path); // returns ?string
-
-        if ($html === null) {
-            if (!headers_sent()) {
-                http_response_code(404);
-                header('Content-Type: text/html; charset=utf-8');
-            }
-            $html = '<h1>404 Not Found</h1>';
+    if ($callable === null) {
+        if (!headers_sent()) {
+            http_response_code(404);
+            header('Content-Type: text/html; charset=utf-8');
         }
-
+        $html = '<h1>404 Not Found</h1>';
         return (new Response())->html($html);
+    }
+
+    // Build a per-request kernel with AuthRequired + route middlewares
+    $routeKernel = new Kernel();
+    $routeKernel->push(new AuthRequired());
+    foreach ($routeMw as $mw) {
+        $routeKernel->push($mw);
+    }
+
+    // Execute route middlewares, then controller callable
+    return $routeKernel->handle($r, function (Request $rr) use ($callable): Response {
+        $html = \call_user_func($callable);
+        return (new Response())->html(is_string($html) ? $html : (string)$html);
     });
 });
 
