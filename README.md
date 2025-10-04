@@ -390,9 +390,6 @@ This approach is simpler and more scalable than per-user ACLs.
 
 
 ---
-## Debug 
-
-You can use '?__debug=1' to debug env
 
 ## Authentication & Sessions
 

@@ -204,3 +204,31 @@ else if (can('members.user.read')) renderReadOnly();
 - RBAC is the base; ABAC rules can be layered later.
 - Use caching for permissions in session/JWT.
 - Always log important actions for auditing.
+
+
+
+Hogyan működik nálunk az RBAC és a CRUD?
+
+Adatmodell: roles, permissions, user_roles, role_permissions.
+
+Betöltés: belépéskor load_permissions_for_user() beolvassa a user összes engedélyét, cache: $_SESSION['perm_cache'].
+
+Ellenőrzés:
+
+Route-on: new RequirePermission('...') → ha nincs, 403.
+
+Menü: MenuLoader → ha nincs, elrejtjük.
+
+CRUD (RBAC UI):
+
+Read: most kész — listák a szerepekről, engedélyekről, hozzárendelésekről.
+
+Create/Update/Delete (következő lépés):
+
+roles: létrehozás, átnevezés, törlés (törlés előtt ütközés-check: van-e hozzárendelés).
+
+permissions: ugyanez.
+
+assignments: user↔role és role↔permission hozzárendelés/levétel.
+
+Védelem: minden művelet RequirePermission('rbac.manage') alatt; űrlapoknál majd CSRF, szerver oldali validáció.
