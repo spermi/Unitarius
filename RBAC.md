@@ -15,18 +15,75 @@ Role-Based Access Control (RBAC) design for Unitarius framework.
 
 ## Database Schema (simplified)
 
-- `roles(id, slug, name)`
-- `permissions(id, code, description)`
-- `role_permissions(role_id, permission_id)`
-- `members(id, person_id, username, email, password_hash, ...)`
-- `member_roles(member_id, role_id)`
-
-Optional tables:
-- `permission_implications(src_permission_id, implies_permission_id)` – handle "write ⇒ read".
-- `auth_providers` – for SSO mapping.
-- `sessions` – active sessions if not JWT.
-
 ---
+   roles
+CREATE TABLE IF NOT EXISTS roles (
+  id BIGSERIAL PRIMARY KEY,
+  name  VARCHAR(100) UNIQUE NOT NULL,   -- e.g. 'admin'
+  label VARCHAR(150) NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- permissions
+CREATE TABLE IF NOT EXISTS permissions (
+  id BIGSERIAL PRIMARY KEY,
+  name  VARCHAR(150) UNIQUE NOT NULL,   -- e.g. 'users.view', 'rbac.manage'
+  label VARCHAR(200) NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- user <-> role
+CREATE TABLE IF NOT EXISTS user_roles (
+  user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  role_id BIGINT NOT NULL REFERENCES roles(id) ON DELETE CASCADE,
+  PRIMARY KEY (user_id, role_id)
+);
+
+-- role <-> permission
+CREATE TABLE IF NOT EXISTS role_permissions (
+  role_id BIGINT NOT NULL REFERENCES roles(id) ON DELETE CASCADE,
+  permission_id BIGINT NOT NULL REFERENCES permissions(id) ON DELETE CASCADE,
+  PRIMARY KEY (role_id, permission_id)
+);
+
+
+INSERT 
+
+
+-- seed role
+INSERT INTO roles (name, label)
+VALUES ('admin','Admin')
+ON CONFLICT (name) DO NOTHING;
+
+-- seed permissions
+INSERT INTO permissions (name, label) VALUES
+  ('users.view',  'List users'),
+  ('rbac.manage', 'Manage RBAC')
+ON CONFLICT (name) DO NOTHING;
+
+-- grant all current permissions to admin role
+INSERT INTO role_permissions (role_id, permission_id)
+SELECT r.id, p.id
+FROM roles r CROSS JOIN permissions p
+WHERE r.name = 'admin'
+ON CONFLICT DO NOTHING;
+
+
+add permission 
+-- replace this with your real email
+WITH me AS (
+  SELECT id AS user_id FROM users WHERE email = 'YOUR.EMAIL@EXAMPLE.COM' LIMIT 1
+),
+admin_role AS (
+  SELECT id AS role_id FROM roles WHERE name = 'admin' LIMIT 1
+)
+INSERT INTO user_roles (user_id, role_id)
+SELECT me.user_id, admin_role.role_id FROM me, admin_role
+ON CONFLICT DO NOTHING;
+-
+
 
 ## RBAC Flow
 

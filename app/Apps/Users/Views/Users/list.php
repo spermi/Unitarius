@@ -1,0 +1,97 @@
+<?php
+/** @var string $title */
+/** @var array<int,array<string,mixed>> $users */
+
+$defaultAvatar = base_url('public/assets/adminlte/img/user.png');
+
+function e(string $v): string {
+    return htmlspecialchars($v, ENT_QUOTES, 'UTF-8');
+}
+?>
+<div class="content-header">
+  <div class="container-fluid">
+    <h1 class="m-0"><?= e($title ?? 'Users') ?></h1>
+  </div>
+</div>
+
+<section class="content">
+  <div class="container-fluid">
+
+    <div class="card card-outline card-primary">
+      <div class="card-header">
+        <h3 class="card-title">Users</h3>
+        <div class="card-tools">
+          <!-- reserved for filters/search later -->
+        </div>
+      </div>
+
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table table-striped table-hover align-middle mb-0">
+            <thead class="table-light">
+              <tr>
+                <th style="width:64px;">Avatar</th>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Status</th>
+                <th>Last login</th>
+                <th class="text-end" style="width:90px;">ID</th>
+              </tr>
+            </thead>
+            <tbody>
+              <?php if (empty($users)): ?>
+                <tr>
+                  <td colspan="6" class="text-center p-4 text-secondary">No users found.</td>
+                </tr>
+              <?php else: ?>
+                <?php foreach ($users as $u): ?>
+                  <?php
+                    $name   = e((string)($u['name'] ?? ''));
+                    $email  = e((string)($u['email'] ?? ''));
+                    $id     = (int)($u['id'] ?? 0);
+                    $status = (int)($u['status'] ?? 0);
+                    $last   = (string)($u['last_login_at'] ?? '');
+                    $avRaw  = (string)($u['avatar'] ?? '');
+                    $avatar = $avRaw !== '' ? e($avRaw) : $defaultAvatar;
+                  ?>
+                  <tr>
+                    <td>
+                      <img
+                        src="<?= $avatar ?>"
+                        alt="avatar"
+                        class="rounded-circle"
+                        width="48" height="48"
+                        loading="lazy"
+                        referrerpolicy="no-referrer"
+                        style="object-fit:cover;"
+                      >
+                    </td>
+                    <td><?= $name !== '' ? $name : '<span class="text-secondary">—</span>' ?></td>
+                    <td><a href="mailto:<?= $email ?>"><?= $email !== '' ? $email : '<span class="text-secondary">—</span>' ?></a></td>
+                    <td>
+                      <?php if ($status === 1): ?>
+                        <span class="badge bg-success">Active</span>
+                      <?php else: ?>
+                        <span class="badge bg-secondary">Inactive</span>
+                      <?php endif; ?>
+                    </td>
+                    <td>
+                      <?= $last !== '' ? e($last) : '<span class="text-secondary">—</span>' ?>
+                    </td>
+                    <td class="text-end"><code><?= $id ?></code></td>
+                  </tr>
+                <?php endforeach; ?>
+              <?php endif; ?>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card-footer text-body-secondary small">
+        <!-- future: pagination / totals -->
+        Showing <?= count($users) ?> item(s).
+      </div>
+    </div>
+
+  </div>
+</section>

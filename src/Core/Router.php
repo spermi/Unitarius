@@ -37,13 +37,36 @@ final class Router
             return null;
         }
 
+        // Cases we support:
+        // 1) callable (closure or [obj,'method'])
+        // 2) [ClassName::class, 'method']               → instantiate class, call method
+        // 3) [MiddlewareInstance, [ClassName,'method']] → IGNORE middleware here, call controller
+        //    (Per-route middleware pipeline will be handled at Kernel level in a later step.)
         if (is_array($handler)) {
-            [$class, $action] = $handler;
-            $handler = [new $class(), $action];
+
+            // (3) route-level middleware array form → use only the controller spec for now
+            if (
+                count($handler) === 2
+                && is_object($handler[0])                        // e.g. new RequirePermission('users.view')
+                && is_array($handler[1])                         // controller spec
+                && isset($handler[1][0], $handler[1][1])
+            ) {
+                $controllerSpec = $handler[1];
+                if (is_string($controllerSpec[0])) {
+                    $handler = [new $controllerSpec[0](), $controllerSpec[1]];
+                } else {
+                    $handler = $controllerSpec; // already callable like [$obj,'method']
+                }
+            }
+            // (2) classic [ClassName::class, 'method']
+            elseif (isset($handler[0], $handler[1]) && is_string($handler[0]) && is_string($handler[1])) {
+                $handler = [new $handler[0](), $handler[1]];
+            }
+            // else: assume it's already a valid callable (closure or [$obj,'method'])
         }
 
         // Return the result, caller decides how to send
-        $result = call_user_func($handler);
+        $result = \call_user_func($handler);
 
         // normalize to string
         return is_string($result) ? $result : (string)$result;

@@ -73,10 +73,36 @@ final class MenuLoader
             $items[] = $cfg;
         }
 
+        // Sort top-level items
         usort($items, static function ($a, $b) {
             $ord = ((int)($a['order'] ?? 999)) <=> ((int)($b['order'] ?? 999));
             return $ord !== 0 ? $ord : strcasecmp((string)($a['label'] ?? ''), (string)($b['label'] ?? ''));
         });
+
+        // --------------------------------------------------------------------
+        // RBAC FILTER: hide menu items that require permissions the user lacks
+        // --------------------------------------------------------------------
+        if (function_exists('is_logged_in') && function_exists('can') && is_logged_in()) {
+            $items = array_values(array_filter($items, static function (array $item): bool {
+                // If parent has a perm and user lacks it → skip entire block
+                if (!empty($item['perm']) && !\can((string)$item['perm'])) {
+                    return false;
+                }
+
+                // Filter children individually by permission
+                if (!empty($item['children']) && is_array($item['children'])) {
+                    $item['children'] = array_values(array_filter($item['children'], static function (array $child): bool {
+                        if (!empty($child['perm']) && !\can((string)$child['perm'])) {
+                            return false;
+                        }
+                        return true;
+                    }));
+                }
+
+                // Keep the parent even if all children are filtered — it acts as a group
+                return true;
+            }));
+        }
 
         return $items;
     }

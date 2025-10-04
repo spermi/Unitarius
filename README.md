@@ -361,6 +361,8 @@ RBAC integration (perm) will be applied later using can($perm).
 The system will use **RBAC** to manage permissions across multiple modules/programs.  
 This approach is simpler and more scalable than per-user ACLs.
 
+
+
 ### Concepts
 - **Roles** – groups of permissions (e.g. `admin`, `editor`, `viewer`).
 - **Permissions** – fine-grained rights, namespaced per module (e.g. `hr.person.create`, `finance.invoice.view`).
@@ -387,6 +389,7 @@ This approach is simpler and more scalable than per-user ACLs.
 - (Optional) CLI commands (e.g. `bin/console migrate`).  
 
 
+---
 ## Debug 
 
 You can use '?__debug=1' to debug env
@@ -458,3 +461,31 @@ VALUES (
   NOW()
 );
 ```
+
+## Google Auth specific settings, tweaks 
+Google avatar images require `referrerpolicy="no-referrer"` to display correctly, 
+> since Google blocks requests with referrer headers from external domains.
+
+
+### Google first-login behavior
+- When a user signs in with Google for the first time and no local record exists,
+  the system automatically creates a new user entry:
+    - `email` — from Google profile  
+    - `name` — from Google profile (or email if missing)  
+    - `avatar` — Google profile image (TEXT URL)  
+    - `status` — set to 1 (active)  
+    - `password_hash` — random, securely generated string (not disclosed to user)  
+    - `created_at`, `updated_at`, `last_login_at` — set to `NOW()`
+- On subsequent Google logins, only `name`, `avatar`, and `last_login_at`
+  are updated if they changed.
+
+
+### Logout security
+- The logout process clears all session data, including OAuth session variables.
+- It regenerates the session ID and invalidates the session cookie to prevent fixation.
+
+
+### Debug mode
+When `APP_ENV=local` or `?__debug=1` is added to a URL, 
+AuthController methods emit extra headers (e.g., `X-Debug-Token-HasError`)
+and display raw exception traces to aid troubleshooting.
