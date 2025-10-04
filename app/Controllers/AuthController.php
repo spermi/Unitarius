@@ -21,44 +21,61 @@ final class AuthController
 }
 
     // POST /login
-    public function doLogin(): void
-    {
-        $email = trim((string)($_POST['email'] ?? ''));
-        $pass  = (string)($_POST['password'] ?? '');
+   public function doLogin(): void
+{
+    $email = trim((string)($_POST['email'] ?? ''));
+    $pass  = (string)($_POST['password'] ?? '');
 
-        unset($_SESSION['flash_error']);
+    unset($_SESSION['flash_error']);
 
-        if ($email === '' || $pass === '') {
-            $_SESSION['flash_error'] = 'Invalid credentials.';
-            header('Location: ' . base_url('/login'));
-            exit;
-        }
-
-        try {
-            $pdo = DB::pdo();
-            $stmt = $pdo->prepare('SELECT id,email,password_hash,name,status FROM users WHERE email = :email LIMIT 1');
-            $stmt->execute([':email' => $email]);
-            $user = $stmt->fetch(\PDO::FETCH_ASSOC) ?: null;
-        } catch (\Throwable $e) {
-            $_SESSION['flash_error'] = 'Login temporarily unavailable.';
-            header('Location: ' . base_url('/login'));
-            exit;
-        }
-
-        if (!$user || (int)$user['status'] !== 1 || !password_verify($pass, $user['password_hash'])) {
-            $_SESSION['flash_error'] = 'Invalid credentials.';
-            header('Location: ' . base_url('/login'));
-            exit;
-        }
-
-        // success
-        login_user($user);
-
-        $intended = $_SESSION['intended'] ?? null;
-        unset($_SESSION['intended']);
-        header('Location: ' . ($intended ?: base_url('/')));
+    if ($email === '' || $pass === '') {
+        $_SESSION['flash_error'] = 'Invalid credentials.';
+        header('Location: ' . base_url('/login'));
         exit;
     }
+
+    // Env-based debug: show details only in local (or with ?__debug=1)
+    $__debug = (($_ENV['APP_ENV'] ?? 'production') === 'local') || isset($_GET['__debug']);
+    if ($__debug) {
+        header('X-Debug-Login-Email: ' . $email);
+    }
+
+    try {
+        $pdo = DB::pdo();
+        $stmt = $pdo->prepare('SELECT id,email,password_hash,name,status FROM users WHERE email = :email LIMIT 1');
+        $stmt->execute([':email' => $email]);
+        $user = $stmt->fetch(\PDO::FETCH_ASSOC) ?: null;
+    } catch (\Throwable $e) {
+        // Always log; only expose details in local
+        error_log('[Password Login] ' . $e->getMessage() . "\n" . $e->getTraceAsString());
+
+        if ($__debug) {
+            header('Content-Type: text/plain; charset=utf-8');
+            http_response_code(500);
+            echo "Password login exception:\n" . $e->getMessage() . "\n\n" . $e->getTraceAsString();
+            exit;
+        }
+
+        $_SESSION['flash_error'] = 'Login temporarily unavailable.';
+        header('Location: ' . base_url('/login'));
+        exit;
+    }
+
+    if (!$user || (int)$user['status'] !== 1 || !password_verify($pass, $user['password_hash'])) {
+        $_SESSION['flash_error'] = 'Invalid credentials.';
+        header('Location: ' . base_url('/login'));
+        exit;
+    }
+
+    // success
+    login_user($user);
+
+    $intended = $_SESSION['intended'] ?? null;
+    unset($_SESSION['intended']);
+    header('Location: ' . ($intended ?: base_url('/')));
+    exit;
+}
+
 
     // POST /logout
     public function logout(): void
@@ -96,10 +113,18 @@ public function googleRedirect(): void
     exit;
 }
 
+
 // GET /auth/google/callback
 public function googleCallback(): void
 {
     unset($_SESSION['flash_error']);
+
+    // Debug only in local (or when ?__debug=1)
+    $__debug = (($_ENV['APP_ENV'] ?? 'production') === 'local') || isset($_GET['__debug']);
+    if ($__debug) {
+        header('X-Debug-AppEnv: ' . ($_ENV['APP_ENV'] ?? 'unknown'));
+        header('X-Debug-RedirectUri: ' . ($_ENV['GOOGLE_REDIRECT_URI'] ?? 'N/A'));
+    }
 
     $clientId     = $_ENV['GOOGLE_CLIENT_ID']     ?? null;
     $clientSecret = $_ENV['GOOGLE_CLIENT_SECRET'] ?? null;
@@ -117,21 +142,39 @@ public function googleCallback(): void
         exit;
     }
 
+    // --- File log path without base_path() helper
+    $logFile = dirname(__DIR__, 2) . '/storage/logs/app.log';
+    $logDir  = dirname($logFile);
+    if (!is_dir($logDir)) { @mkdir($logDir, 0777, true); }
+
     try {
+        // Create client
         $client = new \Google_Client();
         $client->setClientId($clientId);
         $client->setClientSecret($clientSecret);
         $client->setRedirectUri($redirectUri);
 
+        // Exchange code for token
         $token = $client->fetchAccessTokenWithAuthCode($_GET['code']);
+
+        if ($__debug) {
+            header('X-Debug-Token-HasError: ' . (isset($token['error']) ? '1' : '0'));
+        }
+
         if (isset($token['error'])) {
+            @file_put_contents($logFile, "[Google OAuth] token error: " . json_encode($token) . PHP_EOL, FILE_APPEND);
             $_SESSION['flash_error'] = 'Google login hiba (token).';
             header('Location: ' . base_url('/login'));
             exit;
         }
 
+        if (empty($token['access_token'])) {
+            throw new \RuntimeException('Empty access_token in token response');
+        }
+
         $client->setAccessToken($token['access_token']);
 
+        // Fetch user info
         $oauth = new \Google_Service_Oauth2($client);
         $info  = $oauth->userinfo->get();
 
@@ -155,8 +198,15 @@ public function googleCallback(): void
             header('Location: ' . base_url('/login'));
             exit;
         }
+        
+        // Succes: Extra session context for UI
+        $_SESSION['auth_provider'] = 'google';
+        $_SESSION['oauth_name']    = $name;
+        $_SESSION['oauth_avatar']  = isset($info->picture) ? (string)$info->picture : null;
+        // external logger? do we need to log this separately ?
+        // check if we need to update name in local db?
+        
 
-        // Success: same helper as password login
         login_user($user);
 
         $intended = $_SESSION['intended'] ?? null;
@@ -165,10 +215,24 @@ public function googleCallback(): void
         exit;
 
     } catch (\Throwable $e) {
+        @file_put_contents(
+            $logFile,
+            '[Google OAuth] ' . $e->getMessage() . "\n" . $e->getTraceAsString() . PHP_EOL,
+            FILE_APPEND
+        );
+
+        if ($__debug) {
+            header('Content-Type: text/plain; charset=utf-8');
+            http_response_code(500);
+            echo "Google OAuth exception:\n" . $e->getMessage() . "\n\n" . $e->getTraceAsString();
+            exit;
+        }
+
         $_SESSION['flash_error'] = 'Google login kivétel.';
         header('Location: ' . base_url('/login'));
         exit;
     }
 }
+
 
 }

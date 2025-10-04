@@ -180,35 +180,44 @@
             </ul> 
               <!--end::Color Mode Toggler-->
 
+              <?php
+                // default fallback avatar + name
+                $avatar = base_url('public/assets/adminlte/img/user.png');
+                $name   = 'Alexander Pierce';
+
+                // use Google OAuth data if present
+                if (!empty($_SESSION['oauth_avatar'])) {
+                    $avatar = htmlspecialchars($_SESSION['oauth_avatar'], ENT_QUOTES, 'UTF-8');
+                }
+                if (!empty($_SESSION['oauth_name'])) {
+                    $name = htmlspecialchars($_SESSION['oauth_name'], ENT_QUOTES, 'UTF-8');
+                }
+              ?>
               <!--begin::User Menu Dropdown-->
               <li class="nav-item dropdown user-menu">
                 <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown">
-                  <img src="<?= base_url('public/assets/adminlte/img/user6-128x128.jpg') ?>" class="user-image rounded-circle shadow" alt="User Image" >
-                  <span class="d-none d-md-inline">Alexander Pierce</span>
+                  <img src="<?= $avatar ?>" class="user-image rounded-circle shadow" alt="User Image" >
+                  <span class="d-none d-md-inline"><?= $name ?></span>
                 </a>
                 <ul class="dropdown-menu dropdown-menu-lg dropdown-menu-end">
                   <!--begin::User Image-->
-                  <li class="user-header text-bg-primary">
-                    <img src="<?= base_url('public/assets/adminlte/img/user6-128x128.jpg') ?>" class="user-image rounded-circle shadow" alt="User Image" >
-                    <p>
-                      Alexander Pierce - Web Developer
-                      <small>Member since Nov. 2023</small>
-                    </p>
-                  </li>
-                  <!--end::User Image-->
+                    <li class="user-header text-bg-primary">
+                      <img src="<?= $avatar ?>" class="user-image rounded-circle shadow" alt="User Image">
+                      <p>
+                        <?= $name ?> 
+                        <?php if (!empty($_SESSION['auth_provider']) && $_SESSION['auth_provider'] === 'google'): ?>
+                          <small><i class="bi bi-google text-warning"></i> Google login</small>
+                        <?php else: ?>
+                          <small>Local account</small>
+                        <?php endif; ?>
+                      </p>
+                    </li>
+                    <!--end::User Image-->
+
                   <!--begin::Menu Body-->
                   <li class="user-body">
                     <!--begin::Row-->
                     <div class="row">
-                      <div class="col-4 text-center">
-                        <a href="#">Followers</a>
-                      </div>
-                      <div class="col-4 text-center">
-                        <a href="#">Sales</a>
-                      </div>
-                      <div class="col-4 text-center">
-                        <a href="#">Friends</a>
-                      </div>
                     </div>
                     <!--end::Row-->
                   </li>

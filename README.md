@@ -387,7 +387,9 @@ This approach is simpler and more scalable than per-user ACLs.
 - (Optional) CLI commands (e.g. `bin/console migrate`).  
 
 
+## Debug 
 
+You can use '?__debug=1' to debug env
 
 ## Authentication & Sessions
 
