@@ -179,30 +179,38 @@
               </li>
             </ul> 
               <!--end::Color Mode Toggler-->
-
               <?php
-                // default fallback avatar + name
-                $avatar = base_url('public/assets/adminlte/img/user.png');
-                $name   = 'Alexander Pierce';
+                // Defaults Fallback avatar and name
+                $defaultAvatar = base_url('public/assets/adminlte/img/user.png');
 
-                // use Google OAuth data if present
+                // Current local user (from session)
+                $cu   = \current_user(); // helper from Core\Helpers.php
+                $name = $cu['name'] ?? 'User';
+
+                // Prefer Google avatar if ever available (even for local login)
+                $avatar = $defaultAvatar;
                 if (!empty($_SESSION['oauth_avatar'])) {
                     $avatar = htmlspecialchars($_SESSION['oauth_avatar'], ENT_QUOTES, 'UTF-8');
                 }
-                if (!empty($_SESSION['oauth_name'])) {
+
+                // Prefer Google name only if the current session is from Google auth
+                if (!empty($_SESSION['auth_provider']) && $_SESSION['auth_provider'] === 'google' && !empty($_SESSION['oauth_name'])) {
                     $name = htmlspecialchars($_SESSION['oauth_name'], ENT_QUOTES, 'UTF-8');
+                } else {
+                    $name = htmlspecialchars((string)$name, ENT_QUOTES, 'UTF-8');
                 }
               ?>
+
               <!--begin::User Menu Dropdown-->
               <li class="nav-item dropdown user-menu">
                 <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown">
-                  <img src="<?= $avatar ?>" class="user-image rounded-circle shadow" alt="User Image" >
+                  <img src="<?= $avatar ?>" referrerpolicy="no-referrer" class="user-image rounded-circle shadow" alt="User Image" >
                   <span class="d-none d-md-inline"><?= $name ?></span>
                 </a>
                 <ul class="dropdown-menu dropdown-menu-lg dropdown-menu-end">
                   <!--begin::User Image-->
                     <li class="user-header text-bg-primary">
-                      <img src="<?= $avatar ?>" class="user-image rounded-circle shadow" alt="User Image">
+                      <img src="<?= $avatar ?>" referrerpolicy="no-referrer" class="user-image rounded-circle shadow" alt="User Image">
                       <p>
                         <?= $name ?> 
                         <?php if (!empty($_SESSION['auth_provider']) && $_SESSION['auth_provider'] === 'google'): ?>
