@@ -29,18 +29,18 @@ unitarius/
 │  │  │  ├─ routes.php                    # Routes local to People (mounted under prefix from manifest)
 │  │  │  └─ manifest.php                  # Menu/App meta: label, icon, prefix, order, children, perm
 │  │  ├─ Users/                           # Users + (later) RBAC mini-app
-│  │  │  ├─ Controllers/
+│  │  │  ├─ Controllers/                  # Controllers for user and RBAC management
 │  │  │  │  ├─ UserController.php         # User listing & management
-│  │  │  │  └─ RbacController.php
-│  │  │  ├─ Views/
-│  │  │  │   ├─rbac
-│  │  │  │   | ├─ assignments.php
-│  │  │  │   | ├─ index.php
-│  │  │  │   | ├─ permissions.php
-│  │  │  │   | └─ roles.php
-│  │  │  │   └─Users
-│  │  │  │     └─list.php                 # Users list view
-│  │  │  ├─ routes.php                    # Users app routes
+│  │  │  │  └─ RbacController.php         # RBAC (roles, permissions, assignments)
+│  │  │  ├─ Views/                        # Views for Users and RBAC modules
+│  │  │  │   ├─ rbac/                     # RBAC section views
+│  │  │  │   │  ├─ assignments.php        # Lists user↔role and role↔permission mappings
+│  │  │  │   │  ├─ index.php              # RBAC dashboard (entry point)
+│  │  │  │   │  ├─ permissions.php        # Permission list view
+│  │  │  │   │  └─ roles.php              # Role list view
+│  │  │  │   └─ Users/                    # User section views
+│  │  │  │       └─ list.php              # Users list view
+│  │  │  ├─ routes.php                    # Users app routes (with RBAC middleware)
 │  │  │  └─ manifest.php                  # Per-app manifest (menu meta, children: Users, RBAC)
 │  │  └─ (more apps as needed)/
 │  ├─ Controllers/
@@ -492,3 +492,4 @@ Google avatar images require `referrerpolicy="no-referrer"` to display correctly
 When `APP_ENV=local` or `?__debug=1` is added to a URL, 
 AuthController methods emit extra headers (e.g., `X-Debug-Token-HasError`)
 and display raw exception traces to aid troubleshooting.
+
