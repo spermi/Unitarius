@@ -16,12 +16,6 @@ function e(string $v): string {
       <div class="col-sm-6">
         <h3 class="mb-0"><?= e($title ?? 'Felhasználók') ?></h3>
       </div>
-      <div class="col-sm-6">
-        <ol class="breadcrumb float-sm-end">
-          <li class="breadcrumb-item"><a href="<?= base_url('/') ?>">Vezérlőpult</a></li>
-          <li class="breadcrumb-item active">Felhasználók</li>
-        </ol>
-      </div>
     </div>
   </div>
 </div>

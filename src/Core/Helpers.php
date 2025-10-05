@@ -62,12 +62,16 @@ namespace {
         function is_logged_in(): bool { return isset($_SESSION['user']) && is_array($_SESSION['user']); }
     }
 
-    //---------------------------------------------------------
+    // ---------------------------------------------------------
     // Log in the given user (array from DB row)
-    //---------------------------------------------------------
+    // ---------------------------------------------------------
     if (!function_exists('login_user')) {
         function login_user(array $user): void {
             if (session_status() === \PHP_SESSION_ACTIVE) { @session_regenerate_id(true); }
+
+            // Invalidate RBAC permission cache on login
+            unset($_SESSION['perm_cache']);
+
             $_SESSION['user'] = [
                 'id'     => (int)($user['id'] ?? 0),
                 'email'  => (string)($user['email'] ?? ''),
@@ -84,15 +88,22 @@ namespace {
         }
     }
 
-    //---------------------------------------------------------
+    // ---------------------------------------------------------
     // Log out the current user and destroy the session
-    //---------------------------------------------------------
+    // ---------------------------------------------------------
     if (!function_exists('logout_user')) {
         function logout_user(): void {
+            // Invalidate RBAC permission cache on logout
+            unset($_SESSION['perm_cache']);
+
             $_SESSION = [];
             if (ini_get('session.use_cookies')) {
                 $p = session_get_cookie_params();
-                setcookie(session_name(), '', time()-42000, $p['path'] ?? '/', $p['domain'] ?? '', (bool)($p['secure'] ?? false), (bool)($p['httponly'] ?? true));
+                setcookie(
+                    session_name(), '', time()-42000,
+                    $p['path'] ?? '/', $p['domain'] ?? '',
+                    (bool)($p['secure'] ?? false), (bool)($p['httponly'] ?? true)
+                );
             }
             if (session_status() === \PHP_SESSION_ACTIVE) { @session_destroy(); }
         }

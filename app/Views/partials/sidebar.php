@@ -22,22 +22,45 @@ if ($uriPath !== '/') {
 }
 
 // --------------------------------------------------------------
-// Build dynamic menu from per-app manifests.
+// Build dynamic menu from per-app manifests + RBAC filtering.
 // Parent active if its own regex matches OR any child is active.
 // --------------------------------------------------------------
 $items = \Core\MenuLoader::load();
+
+/**
+ * RBAC-filter for menu items based on 'perm'.
+ * - Parent kept if: (parent perm allowed) OR (has at least one allowed child).
+ * - Children kept if: no 'perm' OR can($perm) is true.
+ * - Structure preserved; only disallowed entries are removed.
+ */
+$filterMenuByRBAC = function(array $menu): array {
+    $out = [];
+    foreach ($menu as $item) {
+        $parentAllowed = empty($item['perm']) || \can((string)$item['perm']);
+
+        // filter children by perm
+        $children = $item['children'] ?? [];
+        $children = array_values(array_filter($children, function($c){
+            return empty($c['perm']) || \can((string)$c['perm']);
+        }));
+
+        // keep parent if parent allowed OR there are visible children
+        if ($parentAllowed || !empty($children)) {
+            $item['children'] = $children;
+            $out[] = $item;
+        }
+    }
+    return $out;
+};
+
+$items = $filterMenuByRBAC($items);
 
 // Safe matcher: returns true only if a valid regex matches exactly once
 $matches = function (?array $rxs, string $u): bool {
     if (empty($rxs)) return false;
     foreach ($rxs as $rx) {
-        // Skip invalid patterns (preg_last_error would be global; quick validate)
-        if (@preg_match($rx, '') === false) {
-            continue;
-        }
-        if (@preg_match($rx, $u) === 1) {
-            return true;
-        }
+        if (@preg_match($rx, '') === false) continue;
+        if (@preg_match($rx, $u) === 1) return true;
     }
     return false;
 };
@@ -75,9 +98,7 @@ $shouldRenderParent = function (array $item): bool {
       <ul class="nav sidebar-menu flex-column" data-lte-toggle="treeview" role="navigation" aria-label="Main navigation" data-accordion="false" id="navigation" >
           <?php foreach ($items as $it):
               // Skip empty parents (no url and no children)
-              if (!$shouldRenderParent($it)) {
-                  continue;
-              }
+              if (!$shouldRenderParent($it)) continue;
 
               $hasChildren    = !empty($it['children']);
               $isSelfActive   = $matches($it['match'] ?? [], $uriPath);
@@ -87,7 +108,6 @@ $shouldRenderParent = function (array $item): bool {
               $openClass   = ($hasChildren && ($isSelfActive || $hasActiveChild)) ? 'menu-open' : '';
 
               $parentIcon  = $it['icon'] ?? 'fa-regular fa-folder';
-              // If has children, parent is a toggler (no navigation); else it's a normal link
               $parentHref  = $hasChildren ? '#' : ($it['url'] ?? base_url($it['prefix'] ?? '/'));
           ?>
           <li class="nav-item <?= $openClass ?>">

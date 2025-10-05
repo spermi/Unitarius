@@ -57,7 +57,13 @@
         <!--begin::App Content Header-->
         <div class="app-content-header">
           <div class="container-fluid">
-            <!-- Optional: place for global breadcrumbs/title if you want to render something dynamic later -->
+              <?php
+              // Breadcrumbs (dinamikus)
+              // Csak bejelentkezve jelenítjük meg, hogy illeszkedjen a navigációhoz
+              if (is_logged_in()) {
+                  require dirname(__DIR__) . '/Views/partials/breadcrumbs.php';
+              }
+            ?>
           </div>
         </div>
         <!--end::App Content Header-->
@@ -98,7 +104,8 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.min.js" crossorigin="anonymous"></script>
 
     <!-- AdminLTE JS (local) -->
-    <script src="http://localhost/unitarius/public/assets/adminlte/js/adminlte.min.js"></script>
+    <script src="<?= base_url('public/assets/adminlte/js/adminlte.min.js') ?>"></script>
+    
 
     <!-- OverlayScrollbars init -->
     <script>

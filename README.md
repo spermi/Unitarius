@@ -37,7 +37,7 @@ unitarius/
 │  │  │  │   │  ├─ assignments.php        # Lists user↔role and role↔permission mappings
 │  │  │  │   │  ├─ index.php              # RBAC dashboard (entry point)
 │  │  │  │   │  ├─ permissions.php        # Permission list view
-│  │  │  │   │  └─ roles.php              # Role list view
+│  │  │  │   │  └─ roles.php              #    list view
 │  │  │  │   └─ Users/                    # User section views
 │  │  │  │       └─ list.php              # Users list view
 │  │  │  ├─ routes.php                    # Users app routes (with RBAC middleware)
