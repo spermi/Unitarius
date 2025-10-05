@@ -1,45 +1,62 @@
-assignments<?php
+<?php
 /** @var string $title */
 /** @var array<int,array<string,mixed>> $userRoles */
 /** @var array<int,array<string,mixed>> $rolePerms */
 function e(string $v): string { return htmlspecialchars($v, ENT_QUOTES, 'UTF-8'); }
 ?>
-<div class="content-header">
-  <div class="container-fluid d-flex justify-content-between align-items-center">
-    <h1 class="m-0"><?= e($title ?? 'RBAC – Assignments') ?></h1>
-    <div class="btn-group">
-      <a class="btn btn-outline-secondary btn-sm" href="<?= base_url('/rbac') ?>">RBAC dashboard</a>
-      <a class="btn btn-outline-primary btn-sm" href="<?= base_url('/rbac/roles') ?>">Roles</a>
-      <a class="btn btn-outline-primary btn-sm" href="<?= base_url('/rbac/permissions') ?>">Permissions</a>
+
+<!--begin::App Content Header-->
+<div class="app-content-header">
+  <div class="container-fluid d-flex justify-content-between align-items-center flex-wrap">
+    <h3 class="mb-0"><?= e($title ?? 'RBAC – Hozzárendelések') ?></h3>
+    <div class="btn-group mt-2 mt-sm-0">
+      <a class="btn btn-outline-secondary btn-sm" href="<?= base_url('/rbac') ?>">
+        <i class="fa-solid fa-shield-halved me-1"></i> RBAC főoldal
+      </a>
+      <a class="btn btn-outline-primary btn-sm" href="<?= base_url('/rbac/roles') ?>">
+        <i class="fa-regular fa-id-badge me-1"></i> Szerepek
+      </a>
+      <a class="btn btn-outline-primary btn-sm" href="<?= base_url('/rbac/permissions') ?>">
+        <i class="fa-solid fa-key me-1"></i> Jogosultságok
+      </a>
     </div>
   </div>
 </div>
+<!--end::App Content Header-->
 
-<section class="content">
+<!--begin::App Content-->
+<div class="app-content">
   <div class="container-fluid">
 
     <!-- User ↔ Role -->
-    <div class="card card-outline card-primary">
+    <div class="card border-primary-subtle shadow-sm mb-4">
       <div class="card-header d-flex justify-content-between align-items-center">
-        <h3 class="card-title">User ↔ Role</h3>
-        <span class="text-body-secondary small">Total: <?= count($userRoles) ?></span>
+        <h5 class="card-title mb-0">
+          <i class="fa-solid fa-user-tag me-1"></i> Felhasználó ↔ Szerep
+        </h5>
+        <span class="text-body-secondary small">Összesen: <?= count($userRoles) ?></span>
       </div>
+
       <div class="card-body p-0">
         <div class="table-responsive">
           <table class="table table-striped table-hover align-middle mb-0">
             <thead class="table-light">
               <tr>
                 <th style="width:90px;">User ID</th>
-                <th>User name</th>
-                <th>User email</th>
+                <th>Név</th>
+                <th>E-mail</th>
                 <th style="width:90px;">Role ID</th>
-                <th>Role name</th>
-                <th>Role label</th>
+                <th>Szerep neve</th>
+                <th>Szerep címke</th>
               </tr>
             </thead>
             <tbody>
               <?php if (empty($userRoles)): ?>
-                <tr><td colspan="6" class="text-center p-4 text-secondary">No user-role mappings.</td></tr>
+                <tr>
+                  <td colspan="6" class="text-center p-4 text-secondary">
+                    <i class="fa-regular fa-circle-xmark me-1"></i> Nincs felhasználó–szerep hozzárendelés.
+                  </td>
+                </tr>
               <?php else: ?>
                 <?php foreach ($userRoles as $ur): ?>
                   <tr>
@@ -56,31 +73,41 @@ function e(string $v): string { return htmlspecialchars($v, ENT_QUOTES, 'UTF-8')
           </table>
         </div>
       </div>
-      <div class="card-footer text-body-secondary small">Read-only. Assignment editor coming soon.</div>
+
+      <div class="card-footer text-body-secondary small">
+        Olvasható nézet. Szerkesztés (CRUD) hamarosan.
+      </div>
     </div>
 
     <!-- Role ↔ Permission -->
-    <div class="card card-outline card-secondary">
+    <div class="card border-secondary-subtle shadow-sm">
       <div class="card-header d-flex justify-content-between align-items-center">
-        <h3 class="card-title">Role ↔ Permission</h3>
-        <span class="text-body-secondary small">Total: <?= count($rolePerms) ?></span>
+        <h5 class="card-title mb-0">
+          <i class="fa-solid fa-diagram-project me-1"></i> Szerep ↔ Jogosultság
+        </h5>
+        <span class="text-body-secondary small">Összesen: <?= count($rolePerms) ?></span>
       </div>
+
       <div class="card-body p-0">
         <div class="table-responsive">
           <table class="table table-striped table-hover align-middle mb-0">
             <thead class="table-light">
               <tr>
                 <th style="width:90px;">Role ID</th>
-                <th>Role name</th>
-                <th>Role label</th>
+                <th>Szerep neve</th>
+                <th>Szerep címke</th>
                 <th style="width:120px;">Permission ID</th>
-                <th>Permission name</th>
-                <th>Permission label</th>
+                <th>Jogosultság neve</th>
+                <th>Jogosultság címke</th>
               </tr>
             </thead>
             <tbody>
               <?php if (empty($rolePerms)): ?>
-                <tr><td colspan="6" class="text-center p-4 text-secondary">No role-permission mappings.</td></tr>
+                <tr>
+                  <td colspan="6" class="text-center p-4 text-secondary">
+                    <i class="fa-regular fa-circle-xmark me-1"></i> Nincs szerep–jogosultság hozzárendelés.
+                  </td>
+                </tr>
               <?php else: ?>
                 <?php foreach ($rolePerms as $rp): ?>
                   <tr>
@@ -97,8 +124,12 @@ function e(string $v): string { return htmlspecialchars($v, ENT_QUOTES, 'UTF-8')
           </table>
         </div>
       </div>
-      <div class="card-footer text-body-secondary small">Read-only. Mapping editor coming soon.</div>
+
+      <div class="card-footer text-body-secondary small">
+        Olvasható nézet. Szerkesztés (CRUD) hamarosan.
+      </div>
     </div>
 
   </div>
-</section>
+</div>
+<!--end::App Content-->

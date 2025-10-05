@@ -1,62 +1,76 @@
 <!doctype html>
 <html lang="en">
   <!--begin::Head-->
-  <head>
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" >
-    <title><?= htmlspecialchars($title ?? 'Kezdőlap') ?></title>
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" >
+  <title><?= htmlspecialchars($title ?? 'Kezdőlap') ?></title>
 
-    <!--begin::Accessibility Meta Tags-->
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" >
-    <meta name="color-scheme" content="light dark" >
-    <meta name="theme-color" content="#007bff" media="(prefers-color-scheme: light)" >
-    <meta name="theme-color" content="#1a1a1a" media="(prefers-color-scheme: dark)" >
-    <!--end::Accessibility Meta Tags-->
-    <link rel="icon" href="<?= base_url('favicon.ico') ?>">
+  <!--begin::Accessibility Meta Tags-->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" >
+  <meta name="color-scheme" content="light dark" >
+  <meta name="theme-color" content="#007bff" media="(prefers-color-scheme: light)" >
+  <meta name="theme-color" content="#1a1a1a" media="(prefers-color-scheme: dark)" >
+  <!--end::Accessibility Meta Tags-->
+  <link rel="icon" href="<?= base_url('favicon.ico') ?>">
 
-    <!--begin::Accessibility Features-->
-    <!-- Skip links will be dynamically added by accessibility.js -->
-    <meta name="supported-color-schemes" content="light dark" >
-    <link rel="stylesheet" href="<?= base_url('public/assets/adminlte/css/adminlte.css') ?>" >
-    <!--end::Accessibility Features-->
-    <!--begin:: Custom css-->
-    <link rel="stylesheet" href="<?= base_url('public/assets/css/custom.css') ?>">
-    <!--end:: Constom css->
-    <!=-begin::Fonts-->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/source-sans-3@5.0.12/index.css" integrity="sha256-tXJfXfp6Ewt1ilPzLDtQnJV4hclT9XuaZUKyUvmyr+Q=" crossorigin="anonymous" media="print" onload="this.media='all'" >
-    <!--end::Fonts-->
-    <!--begin::Third Party Plugin(OverlayScrollbars CSS)-->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/overlayscrollbars@2.11.0/styles/overlayscrollbars.min.css" crossorigin="anonymous" >
-    <!--end::Third Party Plugin(OverlayScrollbars CSS)-->
-    <!-- Bootstrap 5 (CDN) -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
-    <!-- Font Awesome 6 (CDN) -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-    <!--begin::Third Party Plugin(Bootstrap Icons)-->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css" crossorigin="anonymous" >
-    <!--end::Third Party Plugin(Bootstrap Icons)-->
+  <!--begin::AdminLTE CSS (includes Bootstrap 5)-->
+  <meta name="supported-color-schemes" content="light dark" >
+  <link rel="stylesheet" href="<?= base_url('public/assets/adminlte/css/adminlte.css') ?>" >
+  <!--end::AdminLTE CSS-->
 
-  </head>
-  <!--end::Head-->
-  <!--begin::Body-->
-  <body class="layout-fixed sidebar-expand-lg sidebar-mini bg-body-tertiary">
-    <!--begin::App Wrapper-->
-    <div class="app-wrapper">
+  <!--begin:: Custom css-->
+  <link rel="stylesheet" href="<?= base_url('public/assets/css/custom.css') ?>">
+  <!--end:: Constom css-->
 
-<!-- Hide navbar and Sidebar if login page , need work
+  <!--begin::Fonts-->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/source-sans-3@5.0.12/index.css" integrity="sha256-tXJfXfp6Ewt1ilPzLDtQnJV4hclT9XuaZUKyUvmyr+Q=" crossorigin="anonymous" media="print" onload="this.media='all'" >
+  <!--end::Fonts-->
+
+  <!--begin::Third Party Plugin(OverlayScrollbars CSS)-->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/overlayscrollbars@2.11.0/styles/overlayscrollbars.min.css" crossorigin="anonymous" >
+  <!--end::Third Party Plugin(OverlayScrollbars CSS)-->
+
+  <!-- Font Awesome 6 (CDN) -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+  <!--begin::Third Party Plugin(Bootstrap Icons)-->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css" crossorigin="anonymous" >
+  <!--end::Third Party Plugin(Bootstrap Icons)-->
+
+</head>
+<!--end::Head-->
+<!--begin::Body-->
+<body class="layout-fixed sidebar-expand-lg sidebar-mini bg-body-tertiary">
+  <!--begin::App Wrapper-->
+  <div class="app-wrapper">
+  <!-- Show Navbar and Sidebar only when logged in -->
   <?php if (is_logged_in()): ?>
       <?php require dirname(__DIR__).'/Views/partials/navbar.php'; ?>
       <?php require dirname(__DIR__).'/Views/partials/sidebar.php'; ?>
   <?php endif; ?>
 
+      <!--begin::App Main-->
+      <!-- NOTE:
+           We always render the <main> wrapper so inner views can stay lean.
+           The $content gets injected inside .app-content > .container-fluid.
+      -->
+      <main class="app-main">
+        <!--begin::App Content Header-->
+        <div class="app-content-header">
+          <div class="container-fluid">
+            <!-- Optional: place for global breadcrumbs/title if you want to render something dynamic later -->
+          </div>
+        </div>
+        <!--end::App Content Header-->
 
-      <!-- Content Wrapper -->
-      <div class="content-wrapper">
-        <section class="content pt-3">
-          <div class="container-fluid"> 
+        <!--begin::App Content-->
+        <div class="app-content">
+          <div class="container-fluid">
             <?= $content ?? '' ?>
           </div>
-        </section>
-      </div> 
+        </div>
+        <!--end::App Content-->
+      </main>
+      <!--end::App Main-->
 
        <!--begin::Footer-->
       <footer class="app-footer">
@@ -76,46 +90,33 @@
     </div>
     <!--end::App Wrapper-->
 
+    <!-- Third Party Plugin (OverlayScrollbars) -->
+    <script src="https://cdn.jsdelivr.net/npm/overlayscrollbars@2.11.0/browser/overlayscrollbars.browser.es6.min.js" crossorigin="anonymous"></script>
 
-  <!-- jQuery (CDN) -->
-  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-  <!-- Bootstrap bundle (CDN) -->
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-  <!-- AdminLTE JS (LOCAL, base_url) -->
-  <script src="<?= base_url('public/assets/adminlte/js/adminlte.min.js') ?>"></script>
-  <!--begin::Third Party Plugin(OverlayScrollbars)-->
-  <script src="https://cdn.jsdelivr.net/npm/overlayscrollbars@2.11.0/browser/overlayscrollbars.browser.es6.min.js" crossorigin="anonymous" >
-  </script>
-  <!--end::Third Party Plugin(OverlayScrollbars)-->
-  <!--begin::OverlayScrollbars Configure-->
+    <!-- Required Plugins for Bootstrap 5 -->
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.min.js" crossorigin="anonymous"></script>
+
+    <!-- AdminLTE JS (local) -->
+    <script src="http://localhost/unitarius/public/assets/adminlte/js/adminlte.min.js"></script>
+
+    <!-- OverlayScrollbars init -->
     <script>
       const SELECTOR_SIDEBAR_WRAPPER = '.sidebar-wrapper';
-      const Default = {
-        scrollbarTheme: 'os-theme-light',
-        scrollbarAutoHide: 'leave',
-        scrollbarClickScroll: true,
-      };
+      const Default = { scrollbarTheme: 'os-theme-light', scrollbarAutoHide: 'leave', scrollbarClickScroll: true };
       document.addEventListener('DOMContentLoaded', function () {
         const sidebarWrapper = document.querySelector(SELECTOR_SIDEBAR_WRAPPER);
-
-        // Disable OverlayScrollbars on mobile devices to prevent touch interference
         const isMobile = window.innerWidth <= 992;
-
-        if (
-          sidebarWrapper &&
-          OverlayScrollbarsGlobal?.OverlayScrollbars !== undefined &&
-          !isMobile
-        ) {
+        if (sidebarWrapper &&
+            OverlayScrollbarsGlobal?.OverlayScrollbars !== undefined &&
+            !isMobile) {
           OverlayScrollbarsGlobal.OverlayScrollbars(sidebarWrapper, {
-            scrollbars: {
-              theme: Default.scrollbarTheme,
-              autoHide: Default.scrollbarAutoHide,
-              clickScroll: Default.scrollbarClickScroll,
-            },
+            scrollbars: { theme: Default.scrollbarTheme, autoHide: Default.scrollbarAutoHide, clickScroll: Default.scrollbarClickScroll }
           });
         }
       });
     </script>
+
     <!--end::OverlayScrollbars Configure-->
     <!--begin::Color Mode Toggler-->
     <script>

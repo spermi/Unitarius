@@ -32,7 +32,7 @@
                   <!--begin::Message-->
                   <div class="d-flex">
                     <div class="flex-shrink-0">
-                      <img src="<?= base_url('public/assets/adminlte/img/user1-128x128.jpg') ?>" alt="User Avatar" class="img-size-50 rounded-circle me-3" >
+                      <img src="<?= base_url('public/assets/adminlte/img/user.png') ?>" alt="User Avatar" class="img-size-50 rounded-circle me-3" >
                     </div>
                     <div class="flex-grow-1">
                       <h3 class="dropdown-item-title">
@@ -54,7 +54,7 @@
                   <!--begin::Message-->
                   <div class="d-flex">
                     <div class="flex-shrink-0">
-                      <img src="<?= base_url('public/assets/adminlte/img/user8-128x128.jpg') ?>" alt="User Avatar" class="img-size-50 rounded-circle me-3" >
+                      <img src="<?= base_url('public/assets/adminlte/img/user.png') ?>" alt="User Avatar" class="img-size-50 rounded-circle me-3" >
                     </div>
                     <div class="flex-grow-1">
                       <h3 class="dropdown-item-title">
@@ -76,7 +76,7 @@
                   <!--begin::Message-->
                   <div class="d-flex">
                     <div class="flex-shrink-0">
-                      <img src="<?= base_url('public/assets/adminlte/img/user3-128x128.jpg') ?>" alt="User Avatar" class="img-size-50 rounded-circle me-3" >
+                      <img src="<?= base_url('public/assets/adminlte/img/user.png') ?>" alt="User Avatar" class="img-size-50 rounded-circle me-3" >
                     </div>
                     <div class="flex-grow-1">
                       <h3 class="dropdown-item-title">
@@ -130,14 +130,7 @@
 
           <!--begin::Color Mode Toggler-->
           <li class="nav-item dropdown">
-              <button
-                class="btn btn-link nav-link py-2 px-0 px-lg-2 dropdown-toggle d-flex align-items-center"
-                id="bd-theme"
-                type="button"
-                aria-expanded="false"
-                data-bs-toggle="dropdown"
-                data-bs-display="static"
-              >
+              <button class="btn btn-link nav-link py-2 px-0 px-lg-2 dropdown-toggle d-flex align-items-center" id="bd-theme" type="button" aria-expanded="false" data-bs-toggle="dropdown" data-bs-display="static" >
                 <span class="theme-icon-active">
                   <i class="my-1"></i>
                 </span>
@@ -145,12 +138,7 @@
               </button>
             <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="bd-theme-text" style="--bs-dropdown-min-width: 8rem;" >
               <li>
-                <button
-                  type="button"
-                  class="dropdown-item d-flex align-items-center active"
-                  data-bs-theme-value="light"
-                  aria-pressed="false"
-                >
+                <button type="button" class="dropdown-item d-flex align-items-center active" data-bs-theme-value="light" aria-pressed="false" >
                   <i class="bi bi-sun-fill me-2"></i> Light
                   <i class="bi bi-check-lg ms-auto d-none"></i>
                 </button>
@@ -211,10 +199,9 @@
                   <!--begin::User Image-->
                     <li class="user-header text-bg-primary">
                       <img src="<?= $avatar ?>" referrerpolicy="no-referrer" class="user-image rounded-circle shadow" alt="User Image">
-                      <p>
-                        <?= $name ?> 
+                      <p><?= $name ?> 
                         <?php if (!empty($_SESSION['auth_provider']) && $_SESSION['auth_provider'] === 'google'): ?>
-                          <small><i class="bi bi-google text-warning"></i> Google login</small>
+                         <small><i class="bi bi-google text-warning"></i> Google login</small>
                         <?php else: ?>
                           <small>Local account</small>
                         <?php endif; ?>

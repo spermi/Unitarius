@@ -3,24 +3,36 @@
 /** @var array<int,array<string,mixed>> $roles */
 function e(string $v): string { return htmlspecialchars($v, ENT_QUOTES, 'UTF-8'); }
 ?>
-<div class="content-header">
-  <div class="container-fluid d-flex justify-content-between align-items-center">
-    <h1 class="m-0"><?= e($title ?? 'RBAC – Roles') ?></h1>
-    <div class="btn-group">
-      <a class="btn btn-outline-secondary btn-sm" href="<?= base_url('/rbac') ?>">RBAC dashboard</a>
-      <a class="btn btn-outline-primary btn-sm" href="<?= base_url('/rbac/permissions') ?>">Permissions</a>
-      <a class="btn btn-outline-primary btn-sm" href="<?= base_url('/rbac/assignments') ?>">Assignments</a>
+
+<!--begin::App Content Header-->
+<div class="app-content-header">
+  <div class="container-fluid d-flex justify-content-between align-items-center flex-wrap">
+    <h3 class="mb-0"><?= e($title ?? 'RBAC – Szerepek') ?></h3>
+    <div class="btn-group mt-2 mt-sm-0">
+      <a class="btn btn-outline-secondary btn-sm" href="<?= base_url('/rbac') ?>">
+        <i class="fa-solid fa-shield-halved me-1"></i> RBAC főoldal
+      </a>
+      <a class="btn btn-outline-primary btn-sm" href="<?= base_url('/rbac/permissions') ?>">
+        <i class="fa-solid fa-key me-1"></i> Jogosultságok
+      </a>
+      <a class="btn btn-outline-primary btn-sm" href="<?= base_url('/rbac/assignments') ?>">
+        <i class="fa-solid fa-diagram-project me-1"></i> Hozzárendelések
+      </a>
     </div>
   </div>
 </div>
+<!--end::App Content Header-->
 
-<section class="content">
+<!--begin::App Content-->
+<div class="app-content">
   <div class="container-fluid">
 
-    <div class="card card-outline card-primary">
+    <div class="card border-primary-subtle shadow-sm">
       <div class="card-header d-flex justify-content-between align-items-center">
-        <h3 class="card-title">Roles</h3>
-        <span class="text-body-secondary small">Total: <?= count($roles) ?></span>
+        <h5 class="card-title mb-0">
+          <i class="fa-regular fa-id-badge me-1"></i> Szerepek
+        </h5>
+        <span class="text-body-secondary small">Összesen: <?= count($roles) ?></span>
       </div>
 
       <div class="card-body p-0">
@@ -29,15 +41,19 @@ function e(string $v): string { return htmlspecialchars($v, ENT_QUOTES, 'UTF-8')
             <thead class="table-light">
               <tr>
                 <th style="width:90px;">ID</th>
-                <th>Name</th>
-                <th>Label</th>
-                <th>Created</th>
-                <th>Updated</th>
+                <th>Név</th>
+                <th>Címke</th>
+                <th>Létrehozva</th>
+                <th>Módosítva</th>
               </tr>
             </thead>
             <tbody>
               <?php if (empty($roles)): ?>
-                <tr><td colspan="5" class="text-center p-4 text-secondary">No roles found.</td></tr>
+                <tr>
+                  <td colspan="5" class="text-center p-4 text-secondary">
+                    <i class="fa-regular fa-circle-xmark me-1"></i> Nincsenek szerepek.
+                  </td>
+                </tr>
               <?php else: ?>
                 <?php foreach ($roles as $r): ?>
                   <tr>
@@ -55,9 +71,10 @@ function e(string $v): string { return htmlspecialchars($v, ENT_QUOTES, 'UTF-8')
       </div>
 
       <div class="card-footer text-body-secondary small">
-        Read-only view. CRUD coming soon.
+        <i class="fa-regular fa-lock me-1"></i> Jelenleg csak olvasható nézet — a CRUD funkciók hamarosan elérhetők.
       </div>
     </div>
 
   </div>
-</section>
+</div>
+<!--end::App Content-->

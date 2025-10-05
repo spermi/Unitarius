@@ -195,7 +195,7 @@
                         </div>
                         <!-- /.direct-chat-infos -->
                         <img
-                          class="direct-chat-img" src="<?= base_url('public/assets/adminlte/img/user1-128x128.jpg') ?>" alt="message user image" >
+                          class="direct-chat-img" src="<?= base_url('public/assets/adminlte/img/user.png') ?>" alt="message user image" >
                           
                         <!-- /.direct-chat-img -->
                         <div class="direct-chat-text">
@@ -213,7 +213,7 @@
                         </div>
                         <!-- /.direct-chat-infos -->
                         <img
-                          class="direct-chat-img" src="<?= base_url('public/assets/adminlte/img/user3-128x128.jpg') ?>" alt="message user image" >
+                          class="direct-chat-img" src="<?= base_url('public/assets/adminlte/img/user.png') ?>" alt="message user image" >
                         <!-- /.direct-chat-img -->
                         <div class="direct-chat-text">You better believe it!</div>
                         <!-- /.direct-chat-text -->
@@ -228,7 +228,7 @@
                         </div>
                         <!-- /.direct-chat-infos -->
                         <img
-                          class="direct-chat-img" src="<?= base_url('public/assets/adminlte/img/user1-128x128.jpg') ?>" alt="message user image" >
+                          class="direct-chat-img" src="<?= base_url('public/assets/adminlte/img/user.png') ?>" alt="message user image" >
                         <!-- /.direct-chat-img -->
                         <div class="direct-chat-text">
                           Working with AdminLTE on a great new app! Wanna join?
@@ -245,7 +245,7 @@
                         </div>
                         <!-- /.direct-chat-infos -->
                         <img
-                          class="direct-chat-img" src="<?= base_url('public/assets/adminlte/img/user1-128x128.jpg') ?>" alt="message user image" >
+                          class="direct-chat-img" src="<?= base_url('public/assets/adminlte/img/user.png') ?>" alt="message user image" >
                         <!-- /.direct-chat-img -->
                         <div class="direct-chat-text">I would love to.</div>
                         <!-- /.direct-chat-text -->
@@ -260,7 +260,7 @@
                         <li>
                           <a href="#">
                             <img
-                              class="contacts-list-img" src="<?= base_url('public/assets/adminlte/img/user1-128x128.jpg') ?>" alt="User Avatar" >
+                              class="contacts-list-img" src="<?= base_url('public/assets/adminlte/img/user.png') ?>" alt="User Avatar" >
 
                             <div class="contacts-list-info">
                               <span class="contacts-list-name">
@@ -276,7 +276,7 @@
                         <li>
                           <a href="#">
                             <img
-                              class="contacts-list-img" src="<?= base_url('public/assets/adminlte/img/user7-128x128.jpg') ?>" alt="User Avatar" >
+                              class="contacts-list-img" src="<?= base_url('public/assets/adminlte/img/user.png') ?>" alt="User Avatar" >
 
                             <div class="contacts-list-info">
                               <span class="contacts-list-name">
@@ -292,7 +292,7 @@
                         <li>
                           <a href="#">
                             <img
-                              class="contacts-list-img" src="<?= base_url('public/assets/adminlte/img/user3-128x128.jpg') ?>" alt="User Avatar" >
+                              class="contacts-list-img" src="<?= base_url('public/assets/adminlte/img/user.png') ?>" alt="User Avatar" >
 
                             <div class="contacts-list-info">
                               <span class="contacts-list-name">
@@ -308,7 +308,7 @@
                         <li>
                           <a href="#">
                             <img
-                              class="contacts-list-img" src="<?= base_url('public/assets/adminlte/img/user5-128x128.jpg') ?>" alt="User Avatar" >
+                              class="contacts-list-img" src="<?= base_url('public/assets/adminlte/img/user.png') ?>" alt="User Avatar" >
 
                             <div class="contacts-list-info">
                               <span class="contacts-list-name">
@@ -324,7 +324,7 @@
                         <li>
                           <a href="#">
                             <img
-                              class="contacts-list-img" src="<?= base_url('public/assets/adminlte/img/user6-128x128.jpg') ?>" alt="User Avatar" >
+                              class="contacts-list-img" src="<?= base_url('public/assets/adminlte/img/user.png') ?>" alt="User Avatar" >
 
                             <div class="contacts-list-info">
                               <span class="contacts-list-name">
@@ -340,7 +340,7 @@
                         <li>
                           <a href="#">
                             <img
-                              class="contacts-list-img" src="<?= base_url('public/assets/adminlte/img/user8-128x128.jpg') ?>" alt="User Avatar">
+                              class="contacts-list-img" src="<?= base_url('public/assets/adminlte/img/user.png') ?>" alt="User Avatar">
 
                             <div class="contacts-list-info">
                               <span class="contacts-list-name">

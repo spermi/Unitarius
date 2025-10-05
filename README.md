@@ -30,10 +30,16 @@ unitarius/
 │  │  │  └─ manifest.php                  # Menu/App meta: label, icon, prefix, order, children, perm
 │  │  ├─ Users/                           # Users + (later) RBAC mini-app
 │  │  │  ├─ Controllers/
-│  │  │  │  └─ UserController.php         # User listing & management
+│  │  │  │  ├─ UserController.php         # User listing & management
+│  │  │  │  └─ RbacController.php
 │  │  │  ├─ Views/
-│  │  │  │  ├─ list.php                   # Users list view
-│  │  │  │  └─ rbac.php                   # Placeholder for RBAC UI (roles/permissions)
+│  │  │  │   ├─rbac
+│  │  │  │   | ├─ assignments.php
+│  │  │  │   | ├─ index.php
+│  │  │  │   | ├─ permissions.php
+│  │  │  │   | └─ roles.php
+│  │  │  │   └─Users
+│  │  │  │     └─list.php                 # Users list view
 │  │  │  ├─ routes.php                    # Users app routes
 │  │  │  └─ manifest.php                  # Per-app manifest (menu meta, children: Users, RBAC)
 │  │  └─ (more apps as needed)/

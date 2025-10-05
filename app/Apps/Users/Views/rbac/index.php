@@ -2,54 +2,71 @@
 /** @var string $title */
 function e(string $v): string { return htmlspecialchars($v, ENT_QUOTES, 'UTF-8'); }
 ?>
-<div class="content-header">
-  <div class="container-fluid d-flex justify-content-between align-items-center">
-    <h1 class="m-0"><?= e($title ?? 'RBAC') ?></h1>
-    <div class="btn-group">
-      <a class="btn btn-primary btn-sm" href="<?= base_url('/rbac/roles') ?>">Roles</a>
-      <a class="btn btn-primary btn-sm" href="<?= base_url('/rbac/permissions') ?>">Permissions</a>
-      <a class="btn btn-primary btn-sm" href="<?= base_url('/rbac/assignments') ?>">Assignments</a>
+
+<!--begin::App Content Header-->
+<div class="app-content-header">
+  <div class="container-fluid d-flex justify-content-between align-items-center flex-wrap">
+    <h3 class="mb-0"><?= e($title ?? 'RBAC') ?></h3>
+    <div class="btn-group mt-2 mt-sm-0">
+      <a class="btn btn-primary btn-sm" href="<?= base_url('/rbac/roles') ?>">
+        <i class="fa-solid fa-id-badge me-1"></i> Szerepek
+      </a>
+      <a class="btn btn-primary btn-sm" href="<?= base_url('/rbac/permissions') ?>">
+        <i class="fa-solid fa-key me-1"></i> Jogosultságok
+      </a>
+      <a class="btn btn-primary btn-sm" href="<?= base_url('/rbac/assignments') ?>">
+        <i class="fa-solid fa-diagram-project me-1"></i> Hozzárendelések
+      </a>
     </div>
   </div>
 </div>
+<!--end::App Content Header-->
 
-<section class="content">
+<!--begin::App Content-->
+<div class="app-content">
   <div class="container-fluid">
 
-    <div class="alert alert-info">
-      <i class="bi bi-shield-lock me-2"></i>
-      RBAC (roles & permissions) admin – dashboard.
+    <div class="alert alert-info d-flex align-items-center">
+      <i class="fa-solid fa-shield-halved me-2"></i>
+      RBAC (szerepek és jogosultságok) adminisztrációs központ.
     </div>
 
     <div class="row g-3">
       <div class="col-md-4">
-        <div class="card h-100">
+        <div class="card h-100 border-primary-subtle">
           <div class="card-body">
-            <h5 class="card-title">Roles</h5>
-            <p class="card-text">Define role groups (e.g., <code>admin</code>), then assign them to users.</p>
-            <a href="<?= base_url('/rbac/roles') ?>" class="btn btn-outline-primary btn-sm">Open</a>
+            <h5 class="card-title"><i class="fa-regular fa-id-badge me-1"></i> Szerepek</h5>
+            <p class="card-text">
+              Hozz létre és kezeld a szerepeket (pl. <code>admin</code>), majd rendeld hozzá a felhasználókhoz.
+            </p>
+            <a href="<?= base_url('/rbac/roles') ?>" class="btn btn-outline-primary btn-sm">Megnyitás</a>
           </div>
         </div>
       </div>
       <div class="col-md-4">
-        <div class="card h-100">
+        <div class="card h-100 border-primary-subtle">
           <div class="card-body">
-            <h5 class="card-title">Permissions</h5>
-            <p class="card-text">Fine-grained rights (e.g., <code>users.view</code>, <code>rbac.manage</code>), assignable to roles.</p>
-            <a href="<?= base_url('/rbac/permissions') ?>" class="btn btn-outline-primary btn-sm">Open</a>
+            <h5 class="card-title"><i class="fa-regular fa-keyboard me-1"></i> Jogosultságok</h5>
+            <p class="card-text">
+              Finomhangolt hozzáférési jogok (pl. <code>users.view</code>, <code>rbac.manage</code>), szerepekhez rendelhetők.
+            </p>
+            <a href="<?= base_url('/rbac/permissions') ?>" class="btn btn-outline-primary btn-sm">Megnyitás</a>
           </div>
         </div>
       </div>
       <div class="col-md-4">
-        <div class="card h-100">
+        <div class="card h-100 border-primary-subtle">
           <div class="card-body">
-            <h5 class="card-title">Assignments</h5>
-            <p class="card-text">User ↔ Role and Role ↔ Permission mappings overview.</p>
-            <a href="<?= base_url('/rbac/assignments') ?>" class="btn btn-outline-primary btn-sm">Open</a>
+            <h5 class="card-title"><i class="fa-regular fa-diagram-project me-1"></i> Hozzárendelések</h5>
+            <p class="card-text">
+              Felhasználó ↔ Szerep és Szerep ↔ Jogosultság kapcsolatok áttekintése.
+            </p>
+            <a href="<?= base_url('/rbac/assignments') ?>" class="btn btn-outline-primary btn-sm">Megnyitás</a>
           </div>
         </div>
       </div>
     </div>
 
   </div>
-</section>
+</div>
+<!--end::App Content-->
