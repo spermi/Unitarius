@@ -6,17 +6,17 @@ namespace App\Apps\Users\Controllers;
 use Core\DB;
 use Core\View;
 
-/**
- * RbacController
- *
- * RBAC admin (read-only for now):
- *  - /rbac              → dashboard
- *  - /rbac/roles        → list roles
- *  - /rbac/permissions  → list permissions
- *  - /rbac/assignments  → list user↔role and role↔permission mappings
- *
- * Requires permission: "rbac.manage" (enforced by route middleware).
- */
+// ---------------------------------------------------------
+// RbacController
+//
+// RBAC admin controller:
+//  - /rbac              → dashboard
+//  - /rbac/roles        → list roles
+//  - /rbac/permissions  → list permissions
+//  - /rbac/assignments  → list user↔role and role↔permission mappings
+//
+// Requires permission: "rbac.manage" (enforced by route middleware).
+// ---------------------------------------------------------
 final class RbacController
 {
     // ---------------------------------------------------------
@@ -168,6 +168,15 @@ final class RbacController
     // ---------------------------------------------------------
     public function roleCreate(): void
     {
+        if (!\verify_csrf()) {
+            http_response_code(419);
+            echo View::render('errors/419', [
+                'title' => 'Page Expired',
+                'message' => 'Invalid or missing CSRF token.',
+            ], null);
+            exit;
+        }
+
         $name  = trim((string)($_POST['name']  ?? ''));
         $label = trim((string)($_POST['label'] ?? ''));
 
@@ -176,7 +185,7 @@ final class RbacController
                 $stmt = DB::pdo()->prepare('INSERT INTO roles(name, label) VALUES(:n,:l)');
                 $stmt->execute([':n' => $name, ':l' => $label]);
             } catch (\Throwable $e) {
-                // swallow -> visszairányítunk a listára
+                // swallow -> redirect to list
             }
         }
         header('Location: ' . base_url('/rbac/roles')); exit;
@@ -207,6 +216,15 @@ final class RbacController
     // ---------------------------------------------------------
     public function roleEdit(array $params): void
     {
+        if (!\verify_csrf()) {
+            http_response_code(419);
+            echo View::render('errors/419', [
+                'title' => 'Page Expired',
+                'message' => 'Invalid or missing CSRF token.',
+            ], null);
+            exit;
+        }
+
         $id    = (int)($params['id'] ?? 0);
         $name  = trim((string)($_POST['name']  ?? ''));
         $label = trim((string)($_POST['label'] ?? ''));
@@ -225,11 +243,20 @@ final class RbacController
     // ---------------------------------------------------------
     public function roleDelete(array $params): void
     {
+        if (!\verify_csrf()) {
+            http_response_code(419);
+            echo View::render('errors/419', [
+                'title' => 'Page Expired',
+                'message' => 'Invalid or missing CSRF token.',
+            ], null);
+            exit;
+        }
+
         $id = (int)($params['id'] ?? 0);
 
         if ($id > 0) {
             try {
-                // TODO: később ide jön a "min. 1 admin maradjon" guard.
+                // TODO: later guard "keep at least one admin".
                 $st = DB::pdo()->prepare('DELETE FROM roles WHERE id=:id');
                 $st->execute([':id'=>$id]);
             } catch (\Throwable) {}
@@ -257,6 +284,15 @@ final class RbacController
     // ---------------------------------------------------------
     public function permCreate(): void
     {
+        if (!\verify_csrf()) {
+            http_response_code(419);
+            echo View::render('errors/419', [
+                'title' => 'Page Expired',
+                'message' => 'Invalid or missing CSRF token.',
+            ], null);
+            exit;
+        }
+
         $name  = trim((string)($_POST['name']  ?? ''));
         $label = trim((string)($_POST['label'] ?? ''));
 
@@ -294,6 +330,15 @@ final class RbacController
     // ---------------------------------------------------------
     public function permEdit(array $params): void
     {
+        if (!\verify_csrf()) {
+            http_response_code(419);
+            echo View::render('errors/419', [
+                'title' => 'Page Expired',
+                'message' => 'Invalid or missing CSRF token.',
+            ], null);
+            exit;
+        }
+
         $id    = (int)($params['id'] ?? 0);
         $name  = trim((string)($_POST['name']  ?? ''));
         $label = trim((string)($_POST['label'] ?? ''));
@@ -312,6 +357,15 @@ final class RbacController
     // ---------------------------------------------------------
     public function permDelete(array $params): void
     {
+        if (!\verify_csrf()) {
+            http_response_code(419);
+            echo View::render('errors/419', [
+                'title' => 'Page Expired',
+                'message' => 'Invalid or missing CSRF token.',
+            ], null);
+            exit;
+        }
+
         $id = (int)($params['id'] ?? 0);
 
         if ($id > 0) {
@@ -332,6 +386,15 @@ final class RbacController
     // ---------------------------------------------------------
     public function assignmentsAttach(): void
     {
+        if (!\verify_csrf()) {
+            http_response_code(419);
+            echo View::render('errors/419', [
+                'title' => 'Page Expired',
+                'message' => 'Invalid or missing CSRF token.',
+            ], null);
+            exit;
+        }
+
         $type = (string)($_POST['type'] ?? ''); // 'role_perm' or 'user_role'
         try {
             if ($type === 'role_perm') {
@@ -362,13 +425,22 @@ final class RbacController
     // ---------------------------------------------------------
     public function assignmentsDetach(): void
     {
+        if (!\verify_csrf()) {
+            http_response_code(419);
+            echo View::render('errors/419', [
+                'title' => 'Page Expired',
+                'message' => 'Invalid or missing CSRF token.',
+            ], null);
+            exit;
+        }
+
         $type = (string)($_POST['type'] ?? ''); // 'role_perm' or 'user_role'
         try {
             if ($type === 'role_perm') {
                 $roleId = (int)($_POST['role_id'] ?? 0);
                 $permId = (int)($_POST['permission_id'] ?? 0);
                 if ($roleId > 0 && $permId > 0) {
-                    // TODO: itt lesz később a "ne veszítsük el utolsó admin jogot" guard.
+                    // TODO: later guard for "do not remove last admin permission".
                     DB::pdo()->prepare(
                         'DELETE FROM role_permissions WHERE role_id=:r AND permission_id=:p'
                     )->execute([':r'=>$roleId, ':p'=>$permId]);
@@ -377,7 +449,7 @@ final class RbacController
                 $userId = (int)($_POST['user_id'] ?? 0);
                 $roleId = (int)($_POST['role_id'] ?? 0);
                 if ($userId > 0 && $roleId > 0) {
-                    // TODO: self-demote guard később.
+                    // TODO: self-demote guard later.
                     DB::pdo()->prepare(
                         'DELETE FROM user_roles WHERE user_id=:u AND role_id=:r'
                     )->execute([':u'=>$userId, ':r'=>$roleId]);

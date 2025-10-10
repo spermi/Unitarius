@@ -87,7 +87,7 @@ function e(string $v): string { return htmlspecialchars($v, ENT_QUOTES, 'UTF-8')
       </div>
 
       <div class="card-footer text-body-secondary small">
-        <i class="fa-regular fa-circle-info me-1"></i> A <strong>műveletek</strong> a gombsoron érhetők el (létrehozás/szerkesztés/törlés).
+        <i class="fa-solid fa-circle-info me-1"></i> A <strong>műveletek</strong> a gombsoron érhetők el (létrehozás/szerkesztés/törlés).
       </div>
     </div>
 

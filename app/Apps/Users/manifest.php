@@ -53,7 +53,7 @@ return [
             'label' => 'RBAC – Hozzárendelések',
             'url'   => base_url('/rbac/assignments'),
             'match' => ['#^/rbac/assignments#'],
-            'icon'  => 'fa-regular fa-diagram-project',
+            'icon'  => 'fa-solid fa-diagram-project',
             'order' => 5,
             'perm'  => 'rbac.manage',
         ],

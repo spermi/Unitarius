@@ -1,10 +1,8 @@
 <?php
-http_response_code(500);
+http_response_code(419);
 
-$pageTitle   = $title ?? 'Server Error';
-$description = isset($message) && is_string($message) && $message !== ''
-    ? $message
-    : 'Something went wrong on our side.';
+$pageTitle   = $title ?? 'Page Expired';
+$description = $message ?? 'Your session has expired or the CSRF token is invalid.';
 $homeUrl = function_exists('base_url') ? base_url('/') : '/';
 ?>
 <!doctype html>
@@ -24,23 +22,29 @@ $homeUrl = function_exists('base_url') ? base_url('/') : '/';
   <div class="d-flex align-items-center justify-content-center min-vh-100">
     <div class="text-center px-3" style="max-width: 560px;">
       <div class="mb-2">
-        <span class="display-3 fw-bold text-danger">500</span>
+        <span class="display-3 fw-bold text-warning">419</span>
       </div>
       <h2 class="mb-3">
-        <i class="fas fa-bug text-danger me-2"></i>
+        <i class="fas fa-hourglass-end text-warning me-2"></i>
         <?= htmlspecialchars($pageTitle) ?>
       </h2>
       <p class="text-body-secondary mb-2">
         <?= htmlspecialchars($description) ?>
       </p>
       <p class="text-body-secondary mb-4">
-        Please try again in a few moments. If the problem keeps happening, contact the site administrator.
+        Please refresh the page and try again. If the problem persists, sign out and sign in again.
       </p>
 
-      <a class="btn btn-primary" href="<?= htmlspecialchars($homeUrl) ?>">
-        <i class="fas fa-house me-2"></i>
-        Back to dashboard
-      </a>
+      <div class="d-flex gap-2 justify-content-center flex-wrap">
+        <a class="btn btn-primary" href="<?= htmlspecialchars($homeUrl) ?>">
+          <i class="fas fa-house me-2"></i>
+          Back to dashboard
+        </a>
+        <button class="btn btn-outline-secondary" onclick="location.reload()">
+          <i class="fas fa-rotate-right me-2"></i>
+          Refresh
+        </button>
+      </div>
     </div>
   </div>
 

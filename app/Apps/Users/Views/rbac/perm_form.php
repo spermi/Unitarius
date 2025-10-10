@@ -36,6 +36,7 @@ $label = $isEdit ? (string)($perm['label'] ?? '') : '';
       </div>
 
       <form action="<?= $action ?>" method="post" autocomplete="off" novalidate>
+        <?= csrf_field() ?>
         <div class="card-body">
           <div class="mb-3">
             <label for="name" class="form-label">Név (namespace)</label>

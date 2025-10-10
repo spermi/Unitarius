@@ -19,7 +19,7 @@ return [
       'label'=>'Lista',
       'url'=>base_url('/people'),
       'match'=>['#^/people$#'],
-      'icon'=>'fa-regular fa-list',
+      'icon'=>'fa-solid  fa-list',
       'perm'=>null,
     ],
     [
