@@ -19,7 +19,20 @@ final class ErrorHandler
         set_exception_handler(function (Throwable $e) use ($env) {
             self::log($e);
             http_response_code(500);
-            echo $env === 'local' ? self::renderDev($e) : '500 Internal Server Error';
+
+            if ($env === 'local') {
+                echo self::renderDev($e);
+                return;
+            }
+
+            try {
+                echo View::render('errors/500', [
+                    'title'   => 'Server Error',
+                    'message' => $e->getMessage(),
+                ], null);
+            } catch (Throwable) {
+                echo '500 Internal Server Error';
+            }
         });
     }
 
@@ -27,7 +40,15 @@ final class ErrorHandler
     {
         self::log($e);
         http_response_code(500);
-        echo '500 Internal Server Error';
+
+        try {
+            echo View::render('errors/500', [
+                'title'   => 'Server Error',
+                'message' => $msg,
+            ], null);
+        } catch (Throwable) {
+            echo '500 Internal Server Error';
+        }
         exit;
     }
 

@@ -194,8 +194,11 @@ namespace {
         function require_can(string $perm, ?string $message = null): void {
             if (!can($perm)) {
                 http_response_code(403);
-                $msg = $message ?: 'Hozzáférés megtagadva (' . htmlspecialchars($perm) . ')';
-                echo '<h1>403 Forbidden</h1><p>' . $msg . '</p>';
+                $html = \Core\View::render('errors/403', [
+                    'title'   => 'Access Forbidden',
+                    'message' => $message ?: 'Access denied (required permission: ' . $perm . ').',
+                ], null);
+                echo $html;
                 exit;
             }
         }
@@ -209,14 +212,21 @@ namespace {
             $current = current_user();
             if (!$current) {
                 http_response_code(401);
-                echo '<h1>401 Unauthorized</h1><p>Bejelentkezés szükséges.</p>';
+                $html = \Core\View::render('errors/401', [
+                    'title'   => 'Unauthorized',
+                    'message' => $message ?: 'You need to sign in to continue.',
+                ], null);
+                echo $html;
                 exit;
             }
             $uid = (int)($current['id'] ?? 0);
             if ($uid <= 0 || (int)$recordUserId !== $uid) {
                 http_response_code(403);
-                $msg = $message ?: 'Hozzáférés megtagadva – nem a saját rekord.';
-                echo '<h1>403 Forbidden</h1><p>' . htmlspecialchars($msg) . '</p>';
+                $html = \Core\View::render('errors/403', [
+                    'title'   => 'Access Forbidden',
+                    'message' => $message ?: 'Access denied - you are not the owner of this record.',
+                ], null);
+                echo $html;
                 exit;
             }
         }

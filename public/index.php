@@ -139,12 +139,14 @@ $res = $kernel->handle($req, function (Request $r) use ($router, $uriPath): Resp
     [$callable, $routeMw] = $router->resolve($r->method(), $path);
 
     if ($callable === null) {
-        if (!headers_sent()) {
-            http_response_code(404);
-            header('Content-Type: text/html; charset=utf-8');
-        }
-        $html = '<h1>404 Not Found</h1>';
-        return (new Response())->html($html);
+        $html = View::render('errors/404', [
+            'title' => 'Page Not Found',
+            'message' => 'We could not find the page you were looking for.',
+        ], null);
+
+        return (new Response())
+            ->status(404)
+            ->html($html);
     }
 
     // Build a per-request kernel with AuthRequired + route middlewares

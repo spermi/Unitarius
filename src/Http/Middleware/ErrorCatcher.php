@@ -11,19 +11,19 @@ final class ErrorCatcher implements Middleware
             return $next($req);
         } catch (\Throwable $e) {
             try {
-                // Próbáljuk a 500-as nézetet betölteni
+                // Try rendering the AdminLTE 500 view
                 $html = View::render('errors/500', [
-                    'title'   => 'Hiba történt',
+                    'title'   => 'Server Error',
                     'message' => $e->getMessage(),
-                ]);
+                ], null);
             } catch (\Throwable) {
-                // Ha nincs nézet, akkor minimál HTML fallback
-                $msg = htmlspecialchars($e->getMessage());
+                // Minimal HTML fallback if the view fails
+                $msg = htmlspecialchars($e->getMessage(), ENT_QUOTES, 'UTF-8');
                 $html = "<!doctype html>
-<html lang=\"hu\">
-<head><meta charset=\"utf-8\"><title>500 Hiba</title></head>
+<html lang=\"en\">
+<head><meta charset=\"utf-8\"><title>500 Error</title></head>
 <body style=\"font-family:system-ui;max-width:720px;margin:40px auto;\">
-  <h1>Váratlan hiba (500)</h1>
+  <h1>Unexpected error (500)</h1>
   <p>{$msg}</p>
 </body>
 </html>";
