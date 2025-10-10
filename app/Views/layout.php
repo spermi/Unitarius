@@ -71,6 +71,7 @@
         <!--begin::App Content-->
         <div class="app-content">
           <div class="container-fluid">
+            <?php if (is_logged_in()) { require dirname(__DIR__).'/Views/partials/flash.php'; } ?>
             <?= $content ?? '' ?>
           </div>
         </div>

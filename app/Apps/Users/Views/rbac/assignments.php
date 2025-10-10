@@ -5,7 +5,33 @@
 /** @var array<int,array<string,mixed>> $users */
 /** @var array<int,array<string,mixed>> $roles */
 /** @var array<int,array<string,mixed>> $permissions */
+/** @var array<string,int>|null $urPager */
+/** @var array<string,int>|null $rpPager */
 function e(string $v): string { return htmlspecialchars($v, ENT_QUOTES, 'UTF-8'); }
+
+// --- Pager helpers (defaults if controller does not send) ---
+$ur = $urPager ?? ['page'=>1,'per'=>count($userRoles), 'total'=>count($userRoles), 'pages'=>1];
+$rp = $rpPager ?? ['page'=>1,'per'=>count($rolePerms), 'total'=>count($rolePerms), 'pages'=>1];
+
+// Build URL while preserving existing query params
+$__assign_base = base_url('/rbac/assignments');
+$__assign_qs   = $_GET ?? [];
+$buildUrl = function(array $merge) use ($__assign_base, $__assign_qs): string {
+  $q = array_merge($__assign_qs, $merge);
+  $query = http_build_query($q);
+  return $__assign_base . ($query ? ('?' . $query) : '');
+};
+
+// Range text helper
+$rangeText = function(array $p): string {
+  $total = (int)($p['total'] ?? 0);
+  $per   = max(1, (int)($p['per'] ?? 1));
+  $page  = max(1, (int)($p['page'] ?? 1));
+  if ($total <= 0) return '0 / 0';
+  $start = (($page - 1) * $per) + 1;
+  $end   = min($total, $page * $per);
+  return $start . '–' . $end . ' / ' . $total;
+};
 ?>
 
 <!--begin::App Content Header-->
@@ -31,47 +57,100 @@ function e(string $v): string { return htmlspecialchars($v, ENT_QUOTES, 'UTF-8')
 <div class="app-content">
   <div class="container-fluid">
 
-    <!-- User ↔ Role -->
-    <div class="card border-primary-subtle shadow-sm mb-4" style="font-size:14px;">
+    <!-- Attach forms row -->
+    <div class="row g-3 mb-4">
+      <!-- User ↔ Role attach -->
+      <div class="col-12 col-lg-6">
+        <div class="card border-success-subtle shadow-sm">
+          <div class="card-header">
+            <strong><i class="fa-solid fa-user-plus me-1"></i> Felhasználóhoz szerep hozzárendelése</strong>
+          </div>
+          <form method="post" action="<?= base_url('/rbac/assignments/attach') ?>" class="p-3">
+            <?= csrf_field() ?>
+            <input type="hidden" name="type" value="user_role">
+            <div class="row g-2">
+              <div class="col-12">
+                <label class="form-label">Felhasználó</label>
+                <select name="user_id" class="form-select js-choices" required>
+                  <option value="">– válassz –</option>
+                  <?php foreach ($users as $u): ?>
+                    <option value="<?= (int)$u['id'] ?>">
+                      <?= e((string)($u['name'] ?? $u['email'] ?? '')) ?> (<?= e((string)$u['email'] ?? '') ?>)
+                    </option>
+                  <?php endforeach; ?>
+                </select>
+              </div>
+              <div class="col-12">
+                <label class="form-label">Szerep</label>
+                <select name="role_id" class="form-select js-choices" required>
+                  <option value="">– válassz –</option>
+                  <?php foreach ($roles as $r): ?>
+                    <option value="<?= (int)$r['id'] ?>">
+                      <?= e((string)($r['name'] ?? '')) ?> — <?= e((string)($r['label'] ?? '')) ?>
+                    </option>
+                  <?php endforeach; ?>
+                </select>
+              </div>
+            </div>
+            <div class="mt-3 d-flex justify-content-end">
+              <button class="btn btn-success">
+                <i class="fa-solid fa-plus me-2"></i> Hozzáadás
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- Role ↔ Permission attach -->
+      <div class="col-12 col-lg-6">
+        <div class="card border-primary-subtle shadow-sm">
+          <div class="card-header">
+            <strong><i class="fa-solid fa-key me-1"></i> Jogosultság hozzárendelése szerephez</strong>
+          </div>
+          <form method="post" action="<?= base_url('/rbac/assignments/attach') ?>" class="p-3">
+            <?= csrf_field() ?>
+            <input type="hidden" name="type" value="role_perm">
+            <div class="row g-2">
+              <div class="col-12">
+                <label class="form-label">Szerep</label>
+                <select name="role_id" class="form-select js-choices" required>
+                  <option value="">– válassz –</option>
+                  <?php foreach ($roles as $r): ?>
+                    <option value="<?= (int)$r['id'] ?>">
+                      <?= e((string)($r['name'] ?? '')) ?> — <?= e((string)($r['label'] ?? '')) ?>
+                    </option>
+                  <?php endforeach; ?>
+                </select>
+              </div>
+              <div class="col-12">
+                <label class="form-label">Jogosultság</label>
+                <select name="permission_id" class="form-select js-choices" required>
+                  <option value="">– válassz –</option>
+                  <?php foreach ($permissions as $p): ?>
+                    <option value="<?= (int)$p['id'] ?>">
+                      <?= e((string)($p['name'] ?? '')) ?> — <?= e((string)($p['label'] ?? '')) ?>
+                    </option>
+                  <?php endforeach; ?>
+                </select>
+              </div>
+            </div>
+            <div class="mt-3 d-flex justify-content-end">
+              <button class="btn btn-primary">
+                <i class="fa-solid fa-plus me-2"></i> Hozzáadás
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- User ↔ Role list -->
+    <div class="card border-primary-subtle shadow-sm mb-4">
       <div class="card-header d-flex justify-content-between align-items-center">
         <h5 class="card-title mb-0">
           <i class="fa-solid fa-user-tag me-1"></i> Felhasználó ↔ Szerep
         </h5>
-        <span class="text-body-secondary small">Összesen: <?= count($userRoles) ?></span>
-      </div>
-
-      <!-- Attach form (User ↔ Role) -->
-      <div class="card-body border-bottom">
-        <form action="<?= base_url('/rbac/assignments/attach') ?>" method="post" class="row g-2 align-items-end">
-          <input type="hidden" name="type" value="user_role">
-          <div class="col-12 col-md-5">
-            <label class="form-label">Felhasználó</label>
-            <select name="user_id" class="form-select" required>
-              <option value="">– válassz felhasználót –</option>
-              <?php foreach (($users ?? []) as $u): ?>
-                <option value="<?= (int)$u['id'] ?>">
-                  <?= e((string)($u['name'] ?? $u['email'] ?? '')) ?> (<?= e((string)($u['email'] ?? '')) ?>)
-                </option>
-              <?php endforeach; ?>
-            </select>
-          </div>
-          <div class="col-12 col-md-5">
-            <label class="form-label">Szerep</label>
-            <select name="role_id" class="form-select" required>
-              <option value="">– válassz szerepet –</option>
-              <?php foreach (($roles ?? []) as $r): ?>
-                <option value="<?= (int)$r['id'] ?>">
-                  <?= e((string)$r['name']) ?> — <?= e((string)$r['label']) ?>
-                </option>
-              <?php endforeach; ?>
-            </select>
-          </div>
-          <div class="col-12 col-md-2 text-end">
-            <button type="submit" class="btn btn-primary w-100">
-              <i class="fa-solid fa-link me-1"></i> Hozzárendelés
-            </button>
-          </div>
-        </form>
+        <span class="text-body-secondary small">Összesen: <?= (int)$ur['total'] ?></span>
       </div>
 
       <div class="card-body p-0">
@@ -85,7 +164,7 @@ function e(string $v): string { return htmlspecialchars($v, ENT_QUOTES, 'UTF-8')
                 <th style="width:90px;">Role ID</th>
                 <th>Szerep neve</th>
                 <th>Szerep címke</th>
-                <th class="text-end" style="width:120px;">Műveletek</th>
+                <th style="width:80px;"></th>
               </tr>
             </thead>
             <tbody>
@@ -96,22 +175,22 @@ function e(string $v): string { return htmlspecialchars($v, ENT_QUOTES, 'UTF-8')
                   </td>
                 </tr>
               <?php else: ?>
-                <?php foreach ($userRoles as $ur): ?>
+                <?php foreach ($userRoles as $urRow): ?>
                   <tr>
-                    <td><code><?= (int)($ur['user_id'] ?? 0) ?></code></td>
-                    <td><?= e((string)($ur['user_name'] ?? '')) ?></td>
-                    <td><a href="mailto:<?= e((string)($ur['user_email'] ?? '')) ?>"><?= e((string)($ur['user_email'] ?? '')) ?></a></td>
-                    <td><code><?= (int)($ur['role_id'] ?? 0) ?></code></td>
-                    <td><span class="fw-semibold"><?= e((string)($ur['role_name'] ?? '')) ?></span></td>
-                    <td><?= e((string)($ur['role_label'] ?? '')) ?></td>
+                    <td><code><?= (int)($urRow['user_id'] ?? 0) ?></code></td>
+                    <td><?= e((string)($urRow['user_name'] ?? '')) ?></td>
+                    <td><a href="mailto:<?= e((string)($urRow['user_email'] ?? '')) ?>"><?= e((string)($urRow['user_email'] ?? '')) ?></a></td>
+                    <td><code><?= (int)($urRow['role_id'] ?? 0) ?></code></td>
+                    <td><span class="fw-semibold"><?= e((string)($urRow['role_name'] ?? '')) ?></span></td>
+                    <td><?= e((string)($urRow['role_label'] ?? '')) ?></td>
                     <td class="text-end">
-                      <form action="<?= base_url('/rbac/assignments/detach') ?>" method="post" class="d-inline"
-                            onsubmit="return confirm('Eltávolítod ezt a hozzárendelést?');">
+                      <form method="post" action="<?= base_url('/rbac/assignments/detach') ?>" onsubmit="return confirm('Detach this role from the user?')">
+                        <?= csrf_field() ?>
                         <input type="hidden" name="type" value="user_role">
-                        <input type="hidden" name="user_id" value="<?= (int)($ur['user_id'] ?? 0) ?>">
-                        <input type="hidden" name="role_id" value="<?= (int)($ur['role_id'] ?? 0) ?>">
-                        <button type="submit" class="btn btn-outline-danger btn-sm">
-                          <i class="fa-regular fa-circle-xmark"></i>
+                        <input type="hidden" name="user_id" value="<?= (int)($urRow['user_id'] ?? 0) ?>">
+                        <input type="hidden" name="role_id" value="<?= (int)($urRow['role_id'] ?? 0) ?>">
+                        <button class="btn btn-sm btn-outline-danger" title="Detach">
+                          <i class="fa-solid fa-xmark"></i>
                         </button>
                       </form>
                     </td>
@@ -123,49 +202,41 @@ function e(string $v): string { return htmlspecialchars($v, ENT_QUOTES, 'UTF-8')
         </div>
       </div>
 
+      <div class="card-footer d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <div class="d-flex align-items-center gap-2">
+          <span class="text-body-secondary small"><?= e($rangeText($ur)) ?></span>
+          <form method="get" class="m-0">
+            <?php foreach ($_GET as $k => $v): if (!in_array($k, ['ur_per','ur_page'])): ?>
+              <input type="hidden" name="<?= e($k) ?>" value="<?= e((string)$v) ?>">
+            <?php endif; endforeach; ?>
+            <label class="small text-body-secondary me-1">Megjelenítés:</label>
+            <select name="ur_per" class="form-select form-select-sm d-inline w-auto" onchange="this.form.submit()">
+              <?php foreach ([10,25,50,100] as $opt): ?>
+                <option value="<?= $opt ?>" <?= $opt == $ur['per'] ? 'selected' : '' ?>><?= $opt ?></option>
+              <?php endforeach; ?>
+            </select>
+          </form>
+        </div>
+        <div class="btn-group">
+          <a class="btn btn-sm btn-outline-secondary <?= $ur['page'] <= 1 ? 'disabled' : '' ?>"
+             href="<?= $ur['page'] <= 1 ? '#' : e($buildUrl(['ur_page'=>$ur['page']-1,'ur_per'=>$ur['per']])) ?>">
+            ‹ Előző
+          </a>
+          <a class="btn btn-sm btn-outline-secondary <?= $ur['page'] >= $ur['pages'] ? 'disabled' : '' ?>"
+             href="<?= $ur['page'] >= $ur['pages'] ? '#' : e($buildUrl(['ur_page'=>$ur['page']+1,'ur_per'=>$ur['per']])) ?>">
+            Következő ›
+          </a>
+        </div>
+      </div>
     </div>
 
-    <!-- Role ↔ Permission -->
-    <div class="card border-secondary-subtle shadow-sm" style="font-size:14px;">
+    <!-- Role ↔ Permission list -->
+    <div class="card border-secondary-subtle shadow-sm">
       <div class="card-header d-flex justify-content-between align-items-center">
         <h5 class="card-title mb-0">
           <i class="fa-solid fa-diagram-project me-1"></i> Szerep ↔ Jogosultság
         </h5>
-        <span class="text-body-secondary small">Összesen: <?= count($rolePerms) ?></span>
-      </div>
-
-      <!-- Attach form (Role ↔ Permission) -->
-      <div class="card-body border-bottom">
-        <form action="<?= base_url('/rbac/assignments/attach') ?>" method="post" class="row g-2 align-items-end">
-          <input type="hidden" name="type" value="role_perm">
-          <div class="col-12 col-md-5">
-            <label class="form-label">Szerep</label>
-            <select name="role_id" class="form-select" required>
-              <option value="">– válassz szerepet –</option>
-              <?php foreach (($roles ?? []) as $r): ?>
-                <option value="<?= (int)$r['id'] ?>">
-                  <?= e((string)$r['name']) ?> — <?= e((string)$r['label']) ?>
-                </option>
-              <?php endforeach; ?>
-            </select>
-          </div>
-          <div class="col-12 col-md-5">
-            <label class="form-label">Jogosultság</label>
-            <select name="permission_id" class="form-select" required>
-              <option value="">– válassz jogosultságot –</option>
-              <?php foreach (($permissions ?? []) as $p): ?>
-                <option value="<?= (int)$p['id'] ?>">
-                  <?= e((string)$p['name']) ?> — <?= e((string)$p['label']) ?>
-                </option>
-              <?php endforeach; ?>
-            </select>
-          </div>
-          <div class="col-12 col-md-2 text-end">
-            <button type="submit" class="btn btn-primary w-100">
-              <i class="fa-solid fa-link me-1"></i> Hozzárendelés
-            </button>
-          </div>
-        </form>
+        <span class="text-body-secondary small">Összesen: <?= (int)$rp['total'] ?></span>
       </div>
 
       <div class="card-body p-0">
@@ -179,7 +250,7 @@ function e(string $v): string { return htmlspecialchars($v, ENT_QUOTES, 'UTF-8')
                 <th style="width:120px;">Permission ID</th>
                 <th>Jogosultság neve</th>
                 <th>Jogosultság címke</th>
-                <th class="text-end" style="width:120px;">Műveletek</th>
+                <th style="width:80px;"></th>
               </tr>
             </thead>
             <tbody>
@@ -190,22 +261,22 @@ function e(string $v): string { return htmlspecialchars($v, ENT_QUOTES, 'UTF-8')
                   </td>
                 </tr>
               <?php else: ?>
-                <?php foreach ($rolePerms as $rp): ?>
+                <?php foreach ($rolePerms as $rpRow): ?>
                   <tr>
-                    <td><code><?= (int)($rp['role_id'] ?? 0) ?></code></td>
-                    <td><span class="fw-semibold"><?= e((string)($rp['role_name'] ?? '')) ?></span></td>
-                    <td><?= e((string)($rp['role_label'] ?? '')) ?></td>
-                    <td><code><?= (int)($rp['permission_id'] ?? 0) ?></code></td>
-                    <td><span class="fw-semibold"><?= e((string)($rp['perm_name'] ?? '')) ?></span></td>
-                    <td><?= e((string)($rp['perm_label'] ?? '')) ?></td>
+                    <td><code><?= (int)($rpRow['role_id'] ?? 0) ?></code></td>
+                    <td><span class="fw-semibold"><?= e((string)($rpRow['role_name'] ?? '')) ?></span></td>
+                    <td><?= e((string)($rpRow['role_label'] ?? '')) ?></td>
+                    <td><code><?= (int)($rpRow['permission_id'] ?? 0) ?></code></td>
+                    <td><span class="fw-semibold"><?= e((string)($rpRow['perm_name'] ?? '')) ?></span></td>
+                    <td><?= e((string)($rpRow['perm_label'] ?? '')) ?></td>
                     <td class="text-end">
-                      <form action="<?= base_url('/rbac/assignments/detach') ?>" method="post" class="d-inline"
-                            onsubmit="return confirm('Eltávolítod ezt a hozzárendelést?');">
+                      <form method="post" action="<?= base_url('/rbac/assignments/detach') ?>" onsubmit="return confirm('Detach this permission from the role?')">
+                        <?= csrf_field() ?>
                         <input type="hidden" name="type" value="role_perm">
-                        <input type="hidden" name="role_id" value="<?= (int)($rp['role_id'] ?? 0) ?>">
-                        <input type="hidden" name="permission_id" value="<?= (int)($rp['permission_id'] ?? 0) ?>">
-                        <button type="submit" class="btn btn-outline-danger btn-sm">
-                          <i class="fa-regular fa-circle-xmark"></i>
+                        <input type="hidden" name="role_id" value="<?= (int)($rpRow['role_id'] ?? 0) ?>">
+                        <input type="hidden" name="permission_id" value="<?= (int)($rpRow['permission_id'] ?? 0) ?>">
+                        <button class="btn btn-sm btn-outline-danger" title="Detach">
+                          <i class="fa-solid fa-xmark"></i>
                         </button>
                       </form>
                     </td>
@@ -217,8 +288,51 @@ function e(string $v): string { return htmlspecialchars($v, ENT_QUOTES, 'UTF-8')
         </div>
       </div>
 
+      <div class="card-footer d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <div class="d-flex align-items-center gap-2">
+          <span class="text-body-secondary small"><?= e($rangeText($rp)) ?></span>
+          <form method="get" class="m-0">
+            <?php foreach ($_GET as $k => $v): if (!in_array($k, ['rp_per','rp_page'])): ?>
+              <input type="hidden" name="<?= e($k) ?>" value="<?= e((string)$v) ?>">
+            <?php endif; endforeach; ?>
+            <label class="small text-body-secondary me-1">Megjelenítés:</label>
+            <select name="rp_per" class="form-select form-select-sm d-inline w-auto" onchange="this.form.submit()">
+              <?php foreach ([10,25,50,100] as $opt): ?>
+                <option value="<?= $opt ?>" <?= $opt == $rp['per'] ? 'selected' : '' ?>><?= $opt ?></option>
+              <?php endforeach; ?>
+            </select>
+          </form>
+        </div>
+        <div class="btn-group">
+          <a class="btn btn-sm btn-outline-secondary <?= $rp['page'] <= 1 ? 'disabled' : '' ?>"
+             href="<?= $rp['page'] <= 1 ? '#' : e($buildUrl(['rp_page'=>$rp['page']-1,'rp_per'=>$rp['per']])) ?>">
+            ‹ Előző
+          </a>
+          <a class="btn btn-sm btn-outline-secondary <?= $rp['page'] >= $rp['pages'] ? 'disabled' : '' ?>"
+             href="<?= $rp['page'] >= $rp['pages'] ? '#' : e($buildUrl(['rp_page'=>$rp['page']+1,'rp_per'=>$rp['per']])) ?>">
+            Következő ›
+          </a>
+        </div>
+      </div>
     </div>
 
   </div>
 </div>
 <!--end::App Content-->
+
+<!-- Choices.js (searchable selects) -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css" crossorigin="anonymous">
+<script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js" crossorigin="anonymous"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    document.querySelectorAll('.js-choices').forEach(function (el) {
+      new Choices(el, {
+        shouldSort: false,
+        removeItemButton: false,
+        searchPlaceholderValue: 'Keresés...',
+        placeholder: true,
+        placeholderValue: '– válassz –'
+      });
+    });
+  });
+</script>

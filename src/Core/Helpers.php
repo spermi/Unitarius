@@ -185,12 +185,8 @@ namespace {
 
     //---------------------------------------------------------
     // Enforce permission (throws 403 if not granted)
-    //
-    // Enforce that the current user owns the given permission.
-    //  On failure a plain 403 response is emitted and script execution stops.
     //---------------------------------------------------------
     if (!function_exists('require_can')) {
-        
         function require_can(string $perm, ?string $message = null): void {
             if (!can($perm)) {
                 http_response_code(403);
@@ -231,7 +227,6 @@ namespace {
             }
         }
     }
-
 
     //---------------------------------------------------------
     // Load permissions for a user from DB via role mappings.
@@ -278,6 +273,36 @@ namespace {
         }
     }
 
+    //---------------------------------------------------------
+    // -------- Flash messages --------
+    //---------------------------------------------------------
+    if (!function_exists('flash_set')) {
+        function flash_set(string $type, string $msg): void {
+            $_SESSION['_flash'][$type] = $msg;
+        }
+    }
+    if (!function_exists('flash_get')) {
+        function flash_get(?string $type = null): array|string|null {
+            $all = $_SESSION['_flash'] ?? [];
+            if ($type === null) {
+                unset($_SESSION['_flash']);
+                return $all;
+            }
+            $val = $all[$type] ?? null;
+            if ($val !== null) {
+                unset($_SESSION['_flash'][$type]);
+            }
+            if (empty($_SESSION['_flash'])) {
+                unset($_SESSION['_flash']);
+            }
+            return $val;
+        }
+    }
+    if (!function_exists('flash_has')) {
+        function flash_has(string $type): bool {
+            return isset($_SESSION['_flash'][$type]);
+        }
+    }
 
     //---------------------------------------------------------
     // CSRF token helpers
@@ -306,7 +331,6 @@ namespace {
                 && hash_equals($_SESSION['csrf_token'], $token);
         }
     }
-
 
 }
 

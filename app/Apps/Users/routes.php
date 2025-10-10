@@ -113,6 +113,7 @@ return static function (Router $router): void {
         new RequirePermission('rbac.manage'),
         [RbacController::class, 'assignmentsAttach']
     ]);
+    
     $router->post('/rbac/assignments/detach', [
         new RequirePermission('rbac.manage'),
         [RbacController::class, 'assignmentsDetach']
