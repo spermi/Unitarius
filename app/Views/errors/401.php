@@ -1,9 +1,12 @@
 <?php
-http_response_code(404);
+http_response_code(401);
 
-$pageTitle = $title ?? 'Page Not Found';
-$description = $message ?? 'We could not find the page you were looking for.';
+$pageTitle = $title ?? 'Unauthorized';
+$description = isset($message) && is_string($message) && $message !== ''
+    ? $message
+    : 'You need to sign in to continue.';
 $homeUrl = function_exists('base_url') ? base_url('/') : '/';
+$loginUrl = function_exists('base_url') ? base_url('login') : '/login';
 $adminlteCss = function_exists('base_url')
     ? base_url('public/assets/adminlte/css/adminlte.css')
     : '/public/assets/adminlte/css/adminlte.css';
@@ -23,22 +26,28 @@ $customCss = function_exists('base_url')
 </head>
 <body class="hold-transition error-page bg-body-tertiary">
   <div class="error-page text-center text-sm-start">
-    <h1 class="headline text-warning">404</h1>
+    <h1 class="headline text-info">401</h1>
     <div class="error-content">
       <h2 class="mb-3">
-        <i class="fas fa-circle-exclamation text-warning me-2"></i>
+        <i class="fas fa-lock text-info me-2"></i>
         <?= htmlspecialchars($pageTitle) ?>
       </h2>
       <p class="text-body-secondary">
         <?= htmlspecialchars($description) ?>
       </p>
       <p class="text-body-secondary">
-        The page you were looking for may have been moved or no longer exists.
+        Your session may have expired or you do not have valid credentials.
       </p>
-      <a class="btn btn-primary mt-3" href="<?= htmlspecialchars($homeUrl) ?>">
-        <i class="fas fa-arrow-left-long me-2"></i>
-        Back to dashboard
-      </a>
+      <div class="d-flex flex-column flex-sm-row gap-2 mt-3">
+        <a class="btn btn-primary" href="<?= htmlspecialchars($loginUrl) ?>">
+          <i class="fas fa-right-to-bracket me-2"></i>
+          Go to login
+        </a>
+        <a class="btn btn-outline-secondary" href="<?= htmlspecialchars($homeUrl) ?>">
+          <i class="fas fa-home me-2"></i>
+          Back to home
+        </a>
+      </div>
     </div>
   </div>
 </body>
