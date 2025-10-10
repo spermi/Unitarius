@@ -185,13 +185,12 @@ namespace {
 
     //---------------------------------------------------------
     // Enforce permission (throws 403 if not granted)
+    //
+    // Enforce that the current user owns the given permission.
+    //  On failure a plain 403 response is emitted and script execution stops.
     //---------------------------------------------------------
     if (!function_exists('require_can')) {
-        /**
-         * Enforce that the current user owns the given permission.
-         *
-         * On failure a plain 403 response is emitted and script execution stops.
-         */
+        
         function require_can(string $perm, ?string $message = null): void {
             if (!can($perm)) {
                 http_response_code(403);
