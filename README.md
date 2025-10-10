@@ -499,6 +499,8 @@ legalább egy admin maradjon mindig a rendszerben
 
 admin ne vehesse el a saját admin jogát (self-demote guard)
 
+require_can($perm) – 403 hibát dob, ha a felhasználónak nincs jogosultsága
+
 require_owner() helper rekord-tulajdonjog ellenőrzéshez
 
 flash üzenetek redirect után

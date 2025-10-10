@@ -184,6 +184,42 @@ namespace {
     }
 
     //---------------------------------------------------------
+    // Enforce permission (throws 403 if not granted)
+    //---------------------------------------------------------
+    if (!function_exists('require_can')) {
+        function require_can(string $perm, ?string $message = null): void {
+            if (!can($perm)) {
+                http_response_code(403);
+                $msg = $message ?: 'Hozzáférés megtagadva (' . htmlspecialchars($perm) . ')';
+                echo '<h1>403 Forbidden</h1><p>' . $msg . '</p>';
+                exit;
+            }
+        }
+    }
+
+    //---------------------------------------------------------
+    // Enforce record ownership (403 if not the owner)
+    //---------------------------------------------------------
+    if (!function_exists('require_owner')) {
+        function require_owner(int|string|null $recordUserId, ?string $message = null): void {
+            $current = current_user();
+            if (!$current) {
+                http_response_code(401);
+                echo '<h1>401 Unauthorized</h1><p>Bejelentkezés szükséges.</p>';
+                exit;
+            }
+            $uid = (int)($current['id'] ?? 0);
+            if ($uid <= 0 || (int)$recordUserId !== $uid) {
+                http_response_code(403);
+                $msg = $message ?: 'Hozzáférés megtagadva – nem a saját rekord.';
+                echo '<h1>403 Forbidden</h1><p>' . htmlspecialchars($msg) . '</p>';
+                exit;
+            }
+        }
+    }
+
+
+    //---------------------------------------------------------
     // Load permissions for a user from DB via role mappings.
     // Schema expected:
     //   users(id) -> user_roles(user_id, role_id)
@@ -249,6 +285,9 @@ namespace Core {
 
             // Convenience proxies (optional)
             public static function can(string $perm): bool { return \can($perm); }
+            public static function require_can(string $perm, ?string $message = null): void { \require_can($perm, $message); }
+            public static function require_owner(int|string|null $recordUserId, ?string $message = null): void { \require_owner($recordUserId, $message); }
+
             /** @return string[] */
             public static function load_permissions_for_user(int $userId): array { return \load_permissions_for_user($userId); }
         }
