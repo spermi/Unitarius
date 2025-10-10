@@ -493,24 +493,27 @@ When `APP_ENV=local` or `?__debug=1` is added to a URL,
 AuthController methods emit extra headers (e.g., `X-Debug-Token-HasError`)
 and display raw exception traces to aid troubleshooting.
 
-### next work
+### Next work
 
-legalább egy admin maradjon mindig a rendszerben
+Ensure at least one admin always remains in the system.
 
-admin ne vehesse el a saját admin jogát (self-demote guard)
+Prevent admins from removing their own admin role (self-demote guard).
 
-require_can($perm) – 403 hibát dob, ha a felhasználónak nincs jogosultsága
+#### RBAC helper functions
 
-require_owner() helper rekord-tulajdonjog ellenőrzéshez
+- `can($perm)` – returns true when the logged-in user has the given permission (wildcards supported).
+- `can_any([$perm1, $perm2, ...])` – returns true if at least one of the permissions matches.
+- `require_can($perm)` – throws a 403 error and halts execution if the permission is missing (handy in controllers or at the top of routes for a quick guard).
+- `require_owner()` – helper for validating record ownership.
 
-flash üzenetek redirect után
+Flash messages after redirects.
 
-szép 403 / 404 / 500 hibasablonok (AdminLTE stílusban)
+Polished 403 / 404 / 500 error templates (AdminLTE style).
 
-Application admin modul (app-, menü-, route-, manifest-kezelés)
+Application admin module (manage apps, menus, routes, manifests).
 
-MenuLoader DB-fallback / export-import
+MenuLoader DB fallback / export-import.
 
-local user létrehozás támogatása
+Support creating local users.
 
-e-mail / SMTP konfiguráció
+Email / SMTP configuration.
