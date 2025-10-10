@@ -110,8 +110,39 @@ namespace {
     }
 
     //---------------------------------------------------------
+    // Permission implication helper (supports wildcards)
+    // Examples:
+    //  - owned: "users.*"            implies required: "users.view", "users.user.write", ...
+    //  - owned: "accounting.invoice.*" implies "accounting.invoice.view"
+    //  - required: "users.*"         true if any owned perm starts with "users." or equals "users.*"
+    //---------------------------------------------------------
+    if (!function_exists('permission_implies')) {
+        function permission_implies(string $owned, string $required): bool {
+            if ($owned === $required) return true;
+
+            $ownedIsWildcard = str_ends_with($owned, '.*');
+            $reqIsWildcard   = str_ends_with($required, '.*');
+
+            if ($ownedIsWildcard) {
+                $prefix = substr($owned, 0, -2); // drop .*
+                if ($required === $prefix) return true;
+                return str_starts_with($required, $prefix . '.');
+            }
+
+            if ($reqIsWildcard) {
+                $reqPrefix = substr($required, 0, -2);
+                if ($owned === $reqPrefix) return true;
+                return str_starts_with($owned, $reqPrefix . '.');
+            }
+
+            return false;
+        }
+    }
+
+    //---------------------------------------------------------
     // * RBAC: check if current user has the given permission.
     // * Uses session cache to avoid DB hits on each check.
+    // * Supports wildcard hierarchy via permission_implies().
     //---------------------------------------------------------
     if (!function_exists('can')) {
         function can(string $perm): bool {
@@ -123,7 +154,32 @@ namespace {
                 $_SESSION['perm_cache'] = load_permissions_for_user((int)$user['id']);
             }
 
-            return in_array($perm, $_SESSION['perm_cache'], true);
+            $owned = $_SESSION['perm_cache'];
+
+            // Exact match fast path
+            if (in_array($perm, $owned, true)) return true;
+
+            // Wildcard-aware implication checks (both directions)
+            foreach ($owned as $have) {
+                if (permission_implies((string)$have, $perm)) {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+    }
+
+    //---------------------------------------------------------
+    // Helper: check if user has ANY of the given permissions
+    //---------------------------------------------------------
+    if (!function_exists('can_any')) {
+        /** @param string[] $perms */
+        function can_any(array $perms): bool {
+            foreach ($perms as $p) {
+                if (can((string)$p)) return true;
+            }
+            return false;
         }
     }
 

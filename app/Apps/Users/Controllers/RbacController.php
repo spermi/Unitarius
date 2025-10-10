@@ -19,10 +19,9 @@ use Core\View;
  */
 final class RbacController
 {
-    /**
-     * GET /rbac
-     * Simple dashboard page with links to subpages.
-     */
+    // ---------------------------------------------------------
+    // GET /rbac  * Simple dashboard page with links to subpages.
+    // ---------------------------------------------------------
     public function index(): string
     {
         return View::render('rbac/index', [
@@ -30,10 +29,9 @@ final class RbacController
         ]);
     }
 
-    /**
-     * GET /rbac/roles
-     * List all roles.
-     */
+    // ---------------------------------------------------------
+    // GET /rbac/roles * List all roles.
+    // ---------------------------------------------------------
     public function roles(): string
     {
         $roles = [];
@@ -56,10 +54,9 @@ final class RbacController
         ]);
     }
 
-    /**
-     * GET /rbac/permissions
-     * List all permissions.
-     */
+    // ---------------------------------------------------------
+    // GET /rbac/permissions * List all permissions.
+    // ---------------------------------------------------------
     public function permissions(): string
     {
         $perms = [];
@@ -82,17 +79,29 @@ final class RbacController
         ]);
     }
 
-    /**
-     * GET /rbac/assignments
-     * Read-only overview of user↔role and role↔permission mappings.
-     */
+    // ---------------------------------------------------------
+    // GET /rbac/assignments * Overview + attach/detach form adatsorok.
+    // ---------------------------------------------------------
     public function assignments(): string
     {
         $userRoles = [];
         $rolePerms = [];
+        $users = [];
+        $roles = [];
+        $perms = [];
 
         try {
             $pdo = DB::pdo();
+
+            // Select-listák az attach űrlapokhoz
+            $roles = $pdo->query('SELECT id, name, label FROM roles ORDER BY name ASC')
+                         ->fetchAll(\PDO::FETCH_ASSOC) ?: [];
+            $perms = $pdo->query('SELECT id, name, label FROM permissions ORDER BY name ASC')
+                         ->fetchAll(\PDO::FETCH_ASSOC) ?: [];
+            $users = $pdo->query("SELECT id, COALESCE(NULLIF(TRIM(name), ''), email) AS name, email
+                                  FROM users
+                                  ORDER BY email ASC")
+                         ->fetchAll(\PDO::FETCH_ASSOC) ?: [];
 
             // user ↔ role mappings (with names and emails)
             $stmt = $pdo->query(
@@ -130,9 +139,252 @@ final class RbacController
         }
 
         return View::render('rbac/assignments', [
-            'title'      => 'RBAC – Hozzárendelések',
-            'userRoles'  => $userRoles,
-            'rolePerms'  => $rolePerms,
+            'title'       => 'RBAC – Hozzárendelések',
+            'userRoles'   => $userRoles,
+            'rolePerms'   => $rolePerms,
+            'users'       => $users,
+            'roles'       => $roles,
+            'permissions' => $perms,
         ]);
     }
+
+    // -----------------------------
+    // ROLES – CREATE / EDIT / DELETE
+    // -----------------------------
+
+    // ---------------------------------------------------------
+    // GET /rbac/roles/create 
+    // ---------------------------------------------------------
+    public function roleCreateForm(): string
+    {
+        return View::render('rbac/role_form', [
+            'title' => 'RBAC – Új szerep',
+            'role'  => null,
+        ]);
+    }
+
+    // ---------------------------------------------------------
+    // POST /rbac/roles/create 
+    // ---------------------------------------------------------
+    public function roleCreate(): void
+    {
+        $name  = trim((string)($_POST['name']  ?? ''));
+        $label = trim((string)($_POST['label'] ?? ''));
+
+        if ($name !== '' && $label !== '') {
+            try {
+                $stmt = DB::pdo()->prepare('INSERT INTO roles(name, label) VALUES(:n,:l)');
+                $stmt->execute([':n' => $name, ':l' => $label]);
+            } catch (\Throwable $e) {
+                // swallow -> visszairányítunk a listára
+            }
+        }
+        header('Location: ' . base_url('/rbac/roles')); exit;
+    }
+
+    // ---------------------------------------------------------
+    // GET /rbac/roles/{id}/edit 
+    // ---------------------------------------------------------
+    public function roleEditForm(array $params): string
+    {
+        $id = (int)($params['id'] ?? 0);
+        $role = null;
+        if ($id > 0) {
+            try {
+                $st = DB::pdo()->prepare('SELECT id, name, label FROM roles WHERE id=:id');
+                $st->execute([':id' => $id]);
+                $role = $st->fetch(\PDO::FETCH_ASSOC) ?: null;
+            } catch (\Throwable) {}
+        }
+        return View::render('rbac/role_form', [
+            'title' => 'RBAC – Szerep szerkesztése',
+            'role'  => $role,
+        ]);
+    }
+
+    // ---------------------------------------------------------
+    // POST /rbac/roles/{id}/edit 
+    // ---------------------------------------------------------
+    public function roleEdit(array $params): void
+    {
+        $id    = (int)($params['id'] ?? 0);
+        $name  = trim((string)($_POST['name']  ?? ''));
+        $label = trim((string)($_POST['label'] ?? ''));
+
+        if ($id > 0 && $name !== '' && $label !== '') {
+            try {
+                $st = DB::pdo()->prepare('UPDATE roles SET name=:n, label=:l, updated_at=NOW() WHERE id=:id');
+                $st->execute([':n'=>$name, ':l'=>$label, ':id'=>$id]);
+            } catch (\Throwable) {}
+        }
+        header('Location: ' . base_url('/rbac/roles')); exit;
+    }
+
+    // ---------------------------------------------------------
+    // POST /rbac/roles/{id}/delete 
+    // ---------------------------------------------------------
+    public function roleDelete(array $params): void
+    {
+        $id = (int)($params['id'] ?? 0);
+
+        if ($id > 0) {
+            try {
+                // TODO: később ide jön a "min. 1 admin maradjon" guard.
+                $st = DB::pdo()->prepare('DELETE FROM roles WHERE id=:id');
+                $st->execute([':id'=>$id]);
+            } catch (\Throwable) {}
+        }
+        header('Location: ' . base_url('/rbac/roles')); exit;
+    }
+
+    // ---------------------------------------------------------
+    // PERMISSIONS – CREATE / EDIT / DELETE
+    // ---------------------------------------------------------
+
+    // ---------------------------------------------------------
+    // GET /rbac/permissions/create 
+    // ---------------------------------------------------------
+    public function permCreateForm(): string
+    {
+        return View::render('rbac/perm_form', [
+            'title' => 'RBAC – Új jogosultság',
+            'perm'  => null,
+        ]);
+    }
+
+    // ---------------------------------------------------------
+    // POST /rbac/permissions/create 
+    // ---------------------------------------------------------
+    public function permCreate(): void
+    {
+        $name  = trim((string)($_POST['name']  ?? ''));
+        $label = trim((string)($_POST['label'] ?? ''));
+
+        if ($name !== '' && $label !== '') {
+            try {
+                $stmt = DB::pdo()->prepare('INSERT INTO permissions(name, label) VALUES(:n,:l)');
+                $stmt->execute([':n' => $name, ':l' => $label]);
+            } catch (\Throwable $e) {}
+        }
+        header('Location: ' . base_url('/rbac/permissions')); exit;
+    }
+
+    // ---------------------------------------------------------
+    // GET /rbac/permissions/{id}/edit 
+    // ---------------------------------------------------------
+    public function permEditForm(array $params): string
+    {
+        $id = (int)($params['id'] ?? 0);
+        $perm = null;
+        if ($id > 0) {
+            try {
+                $st = DB::pdo()->prepare('SELECT id, name, label FROM permissions WHERE id=:id');
+                $st->execute([':id'=>$id]);
+                $perm = $st->fetch(\PDO::FETCH_ASSOC) ?: null;
+            } catch (\Throwable) {}
+        }
+        return View::render('rbac/perm_form', [
+            'title' => 'RBAC – Jogosultság szerkesztése',
+            'perm'  => $perm,
+        ]);
+    }
+
+    // ---------------------------------------------------------
+    // POST /rbac/permissions/{id}/edit 
+    // ---------------------------------------------------------
+    public function permEdit(array $params): void
+    {
+        $id    = (int)($params['id'] ?? 0);
+        $name  = trim((string)($_POST['name']  ?? ''));
+        $label = trim((string)($_POST['label'] ?? ''));
+
+        if ($id > 0 && $name !== '' && $label !== '') {
+            try {
+                $st = DB::pdo()->prepare('UPDATE permissions SET name=:n, label=:l, updated_at=NOW() WHERE id=:id');
+                $st->execute([':n'=>$name, ':l'=>$label, ':id'=>$id]);
+            } catch (\Throwable) {}
+        }
+        header('Location: ' . base_url('/rbac/permissions')); exit;
+    }
+
+    // ---------------------------------------------------------
+    // POST /rbac/permissions/{id}/delete 
+    // ---------------------------------------------------------
+    public function permDelete(array $params): void
+    {
+        $id = (int)($params['id'] ?? 0);
+
+        if ($id > 0) {
+            try {
+                $st = DB::pdo()->prepare('DELETE FROM permissions WHERE id=:id');
+                $st->execute([':id'=>$id]);
+            } catch (\Throwable) {}
+        }
+        header('Location: ' . base_url('/rbac/permissions')); exit;
+    }
+
+    // ---------------------------------------------------------
+    // ASSIGNMENTS – ATTACH / DETACH
+    // ---------------------------------------------------------
+
+    // ---------------------------------------------------------
+    // POST /rbac/assignments/attach 
+    // ---------------------------------------------------------
+    public function assignmentsAttach(): void
+    {
+        $type = (string)($_POST['type'] ?? ''); // 'role_perm' or 'user_role'
+        try {
+            if ($type === 'role_perm') {
+                $roleId = (int)($_POST['role_id'] ?? 0);
+                $permId = (int)($_POST['permission_id'] ?? 0);
+                if ($roleId > 0 && $permId > 0) {
+                    DB::pdo()->prepare(
+                        'INSERT INTO role_permissions(role_id, permission_id) VALUES(:r,:p)
+                         ON CONFLICT DO NOTHING'
+                    )->execute([':r'=>$roleId, ':p'=>$permId]);
+                }
+            } elseif ($type === 'user_role') {
+                $userId = (int)($_POST['user_id'] ?? 0);
+                $roleId = (int)($_POST['role_id'] ?? 0);
+                if ($userId > 0 && $roleId > 0) {
+                    DB::pdo()->prepare(
+                        'INSERT INTO user_roles(user_id, role_id) VALUES(:u,:r)
+                         ON CONFLICT DO NOTHING'
+                    )->execute([':u'=>$userId, ':r'=>$roleId]);
+                }
+            }
+        } catch (\Throwable) {}
+        header('Location: ' . base_url('/rbac/assignments')); exit;
+    }
+
+    // ---------------------------------------------------------
+    // POST /rbac/assignments/detach 
+    // ---------------------------------------------------------
+    public function assignmentsDetach(): void
+    {
+        $type = (string)($_POST['type'] ?? ''); // 'role_perm' or 'user_role'
+        try {
+            if ($type === 'role_perm') {
+                $roleId = (int)($_POST['role_id'] ?? 0);
+                $permId = (int)($_POST['permission_id'] ?? 0);
+                if ($roleId > 0 && $permId > 0) {
+                    // TODO: itt lesz később a "ne veszítsük el utolsó admin jogot" guard.
+                    DB::pdo()->prepare(
+                        'DELETE FROM role_permissions WHERE role_id=:r AND permission_id=:p'
+                    )->execute([':r'=>$roleId, ':p'=>$permId]);
+                }
+            } elseif ($type === 'user_role') {
+                $userId = (int)($_POST['user_id'] ?? 0);
+                $roleId = (int)($_POST['role_id'] ?? 0);
+                if ($userId > 0 && $roleId > 0) {
+                    // TODO: self-demote guard később.
+                    DB::pdo()->prepare(
+                        'DELETE FROM user_roles WHERE user_id=:u AND role_id=:r'
+                    )->execute([':u'=>$userId, ':r'=>$roleId]);
+                }
+            }
+        } catch (\Throwable) {}
+        header('Location: ' . base_url('/rbac/assignments')); exit;
+    }
+
 }

@@ -493,3 +493,22 @@ When `APP_ENV=local` or `?__debug=1` is added to a URL,
 AuthController methods emit extra headers (e.g., `X-Debug-Token-HasError`)
 and display raw exception traces to aid troubleshooting.
 
+### next work
+
+legalább egy admin maradjon mindig a rendszerben
+
+admin ne vehesse el a saját admin jogát (self-demote guard)
+
+require_owner() helper rekord-tulajdonjog ellenőrzéshez
+
+flash üzenetek redirect után
+
+szép 403 / 404 / 500 hibasablonok (AdminLTE stílusban)
+
+Application admin modul (app-, menü-, route-, manifest-kezelés)
+
+MenuLoader DB-fallback / export-import
+
+local user létrehozás támogatása
+
+e-mail / SMTP konfiguráció
