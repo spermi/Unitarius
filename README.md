@@ -394,6 +394,45 @@ This approach is simpler and more scalable than per-user ACLs.
 - Security middleware (CSRF tokens, security headers).  
 - (Optional) CLI commands (e.g. `bin/console migrate`).  
 
+### RBAC Admin UI (current implementation)
+
+The RBAC administration module (`app/Apps/Users/Controllers/RbacController.php` + `views/rbac/*`) provides a full CRUD interface for roles, permissions, and assignments.
+
+#### Features implemented
+- **Flash messages** (`flash_set('success'|'error', '...')`) after create/edit/delete/attach/detach.
+- **CSRF protection** on all POST actions (`verify_csrf()` and `csrf_field()`).
+- **Assignments view** (`assignments.php`):
+  - Two attach forms:
+    - *User ↔ Role*
+    - *Role ↔ Permission*
+  - Inline detach buttons with confirmation prompts.
+  - Searchable select fields using **Choices.js**.
+  - Pagination and sorting for both lists (user↔role and role↔permission).
+  - Query parameters preserved on navigation:
+    ```
+    ur_page, ur_per, ur_sort, ur_dir
+    rp_page, rp_per, rp_sort, rp_dir
+    ```
+- **Default pagination limits:** 10 / 25 / 50 / 100 per page.
+- **Sorting** with clickable table headers and caret icons (`fa-caret-up`, `fa-caret-down`, `fa-sort`).
+- **Consistent layout** (AdminLTE 4 cards, tables, responsive container).
+
+#### Technical details
+- `RbacController::assignments()` now:
+  - Performs safe pagination and sorting (whitelist-based ORDER BY).
+  - Provides `$urPager`, `$rpPager`, `$urSort`, `$urDir`, `$rpSort`, `$rpDir` to the view.
+- `views/rbac/assignments.php`:
+  - Generates URLs with preserved query parameters (`$buildUrl()` helper).
+  - Displays range text: “start–end / total”.
+  - Dropdown for selecting items per page.
+  - Fully localized Hungarian UI texts.
+
+#### Future improvements
+- Local copy of **Choices.js** instead of CDN.
+- Adjust dark-mode dropdown colors for better contrast.
+- Optional “Reset sort” button per table.
+- Self-demote and “keep one admin” guards for detach operations.
+
 
 ---
 

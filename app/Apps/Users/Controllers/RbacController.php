@@ -80,7 +80,7 @@ final class RbacController
     }
 
     // ---------------------------------------------------------
-    // GET /rbac/assignments * Overview + attach/detach form adatsorok + pagination.
+    // GET /rbac/assignments * Overview + attach/detach + pagination + sorting
     // ---------------------------------------------------------
     public function assignments(): string
     {
@@ -90,7 +90,7 @@ final class RbacController
         $roles = [];
         $perms = [];
 
-        // --- Query paramok (page/per) + védelem ---
+        // --- paging (page/per) + védelem ---
         $allowedPer = [10, 25, 50, 100];
 
         $ur_page = max(1, (int)($_GET['ur_page'] ?? 1));
@@ -103,7 +103,34 @@ final class RbacController
         if (!in_array($rp_per, $allowedPer, true)) { $rp_per = 25; }
         $rp_offset = ($rp_page - 1) * $rp_per;
 
-        // Lapozó infók alapértékekkel (ha DB hiba lenne)
+        // --- sorting (whitelist) ---
+        $urAllowed = ['user_id','user_name','user_email','role_id','role_name','role_label'];
+        $urSort = isset($_GET['ur_sort']) && in_array($_GET['ur_sort'], $urAllowed, true) ? (string)$_GET['ur_sort'] : 'user_id';
+        $urDir  = (isset($_GET['ur_dir']) && strtolower((string)$_GET['ur_dir']) === 'desc') ? 'DESC' : 'ASC';
+        $urColMap = [
+            'user_id'    => 'u.id',
+            'user_name'  => 'u.name',
+            'user_email' => 'u.email',
+            'role_id'    => 'r.id',
+            'role_name'  => 'r.name',
+            'role_label' => 'r.label',
+        ];
+        $urOrderBy = $urColMap[$urSort] . ' ' . $urDir;
+
+        $rpAllowed = ['role_id','role_name','role_label','permission_id','perm_name','perm_label'];
+        $rpSort = isset($_GET['rp_sort']) && in_array($_GET['rp_sort'], $rpAllowed, true) ? (string)$_GET['rp_sort'] : 'role_name';
+        $rpDir  = (isset($_GET['rp_dir']) && strtolower((string)$_GET['rp_dir']) === 'desc') ? 'DESC' : 'ASC';
+        $rpColMap = [
+            'role_id'       => 'r.id',
+            'role_name'     => 'r.name',
+            'role_label'    => 'r.label',
+            'permission_id' => 'p.id',
+            'perm_name'     => 'p.name',
+            'perm_label'    => 'p.label',
+        ];
+        $rpOrderBy = $rpColMap[$rpSort] . ' ' . $rpDir;
+
+        // Lapozó infók alapértékekkel (fallback)
         $urPager = ['page'=>$ur_page, 'per'=>$ur_per, 'total'=>0, 'pages'=>1];
         $rpPager = ['page'=>$rp_page, 'per'=>$rp_per, 'total'=>0, 'pages'=>1];
 
@@ -120,9 +147,7 @@ final class RbacController
                                 ORDER BY email ASC")
                         ->fetchAll(\PDO::FETCH_ASSOC) ?: [];
 
-            // -----------------------------
-            // user_roles: total count
-            // -----------------------------
+            // --- user_roles: total count ---
             $st = $pdo->query('
                 SELECT COUNT(*) AS c
                 FROM user_roles ur
@@ -138,8 +163,8 @@ final class RbacController
                 $urPager['page'] = $ur_page;
             }
 
-            // user_roles: paginated rows
-            $st = $pdo->prepare('
+            // --- user_roles: paginated + sorted rows ---
+            $sqlUr = '
                 SELECT ur.user_id,
                     u.name  AS user_name,
                     u.email AS user_email,
@@ -149,17 +174,16 @@ final class RbacController
                 FROM user_roles ur
                 JOIN users u ON u.id = ur.user_id
                 JOIN roles r ON r.id = ur.role_id
-                ORDER BY u.id ASC, r.name ASC
+                ORDER BY ' . $urOrderBy . '
                 LIMIT :lim OFFSET :off
-            ');
+            ';
+            $st = $pdo->prepare($sqlUr);
             $st->bindValue(':lim', $ur_per, \PDO::PARAM_INT);
             $st->bindValue(':off', $ur_offset, \PDO::PARAM_INT);
             $st->execute();
             $userRoles = $st->fetchAll(\PDO::FETCH_ASSOC) ?: [];
 
-            // -----------------------------
-            // role_permissions: total count
-            // -----------------------------
+            // --- role_permissions: total count ---
             $st = $pdo->query('
                 SELECT COUNT(*) AS c
                 FROM role_permissions rp
@@ -175,8 +199,8 @@ final class RbacController
                 $rpPager['page'] = $rp_page;
             }
 
-            // role_permissions: paginated rows
-            $st = $pdo->prepare('
+            // --- role_permissions: paginated + sorted rows ---
+            $sqlRp = '
                 SELECT rp.role_id,
                     r.name  AS role_name,
                     r.label AS role_label,
@@ -186,9 +210,10 @@ final class RbacController
                 FROM role_permissions rp
                 JOIN roles r        ON r.id = rp.role_id
                 JOIN permissions p  ON p.id = rp.permission_id
-                ORDER BY r.name ASC, p.name ASC
+                ORDER BY ' . $rpOrderBy . '
                 LIMIT :lim OFFSET :off
-            ');
+            ';
+            $st = $pdo->prepare($sqlRp);
             $st->bindValue(':lim', $rp_per, \PDO::PARAM_INT);
             $st->bindValue(':off', $rp_offset, \PDO::PARAM_INT);
             $st->execute();
@@ -207,8 +232,13 @@ final class RbacController
             'permissions' => $perms,
             'urPager'     => $urPager,
             'rpPager'     => $rpPager,
+            'urSort'      => $urSort,
+            'urDir'       => $urDir,
+            'rpSort'      => $rpSort,
+            'rpDir'       => $rpDir,
         ]);
     }
+
 
 
 

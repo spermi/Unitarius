@@ -7,11 +7,24 @@
 /** @var array<int,array<string,mixed>> $permissions */
 /** @var array<string,int>|null $urPager */
 /** @var array<string,int>|null $rpPager */
+/** @var string|null $urSort */
+/** @var string|null $urDir */
+/** @var string|null $rpSort */
+/** @var string|null $rpDir */
 function e(string $v): string { return htmlspecialchars($v, ENT_QUOTES, 'UTF-8'); }
 
 // --- Pager helpers (defaults if controller does not send) ---
 $ur = $urPager ?? ['page'=>1,'per'=>count($userRoles), 'total'=>count($userRoles), 'pages'=>1];
 $rp = $rpPager ?? ['page'=>1,'per'=>count($rolePerms), 'total'=>count($rolePerms), 'pages'=>1];
+
+// --- Sorting (defaults if controller nem küldte) ---
+$urSort = isset($urSort) ? (string)$urSort : (string)($_GET['ur_sort'] ?? 'user_id');
+$urDir  = strtolower(isset($urDir) ? (string)$urDir : (string)($_GET['ur_dir'] ?? 'asc'));
+$urDir  = $urDir === 'desc' ? 'desc' : 'asc';
+
+$rpSort = isset($rpSort) ? (string)$rpSort : (string)($_GET['rp_sort'] ?? 'role_name');
+$rpDir  = strtolower(isset($rpDir) ? (string)$rpDir : (string)($_GET['rp_dir'] ?? 'asc'));
+$rpDir  = $rpDir === 'desc' ? 'desc' : 'asc';
 
 // Build URL while preserving existing query params
 $__assign_base = base_url('/rbac/assignments');
@@ -20,6 +33,23 @@ $buildUrl = function(array $merge) use ($__assign_base, $__assign_qs): string {
   $q = array_merge($__assign_qs, $merge);
   $query = http_build_query($q);
   return $__assign_base . ($query ? ('?' . $query) : '');
+};
+
+// Sort header builder
+$sortHead = function(string $table, string $key, string $label) use ($buildUrl, $urSort, $urDir, $rpSort, $rpDir): string {
+  if ($table === 'ur') {
+    $is  = ($urSort === $key);
+    $dir = $is ? ($urDir === 'asc' ? 'desc' : 'asc') : 'asc';
+    $url = $buildUrl(['ur_sort'=>$key, 'ur_dir'=>$dir, 'ur_page'=>1]);
+    $caret = $is ? ($urDir === 'asc' ? 'fa-caret-up' : 'fa-caret-down') : 'fa-sort';
+  } else {
+    $is  = ($rpSort === $key);
+    $dir = $is ? ($rpDir === 'asc' ? 'desc' : 'asc') : 'asc';
+    $url = $buildUrl(['rp_sort'=>$key, 'rp_dir'=>$dir, 'rp_page'=>1]);
+    $caret = $is ? ($rpDir === 'asc' ? 'fa-caret-up' : 'fa-caret-down') : 'fa-sort';
+  }
+  return '<a class="text-decoration-none text-reset" href="' . e($url) . '">'
+       . e($label) . ' <i class="fa-solid ' . $caret . ' ms-1 opacity-75"></i></a>';
 };
 
 // Range text helper
@@ -107,7 +137,7 @@ $rangeText = function(array $p): string {
           <div class="card-header">
             <strong><i class="fa-solid fa-key me-1"></i> Jogosultság hozzárendelése szerephez</strong>
           </div>
-          <form method="post" action="<?= base_url('/rbac/assignments/attach') ?>" class="p-3">
+        <form method="post" action="<?= base_url('/rbac/assignments/attach') ?>" class="p-3">
             <?= csrf_field() ?>
             <input type="hidden" name="type" value="role_perm">
             <div class="row g-2">
@@ -158,12 +188,12 @@ $rangeText = function(array $p): string {
           <table class="table table-striped table-hover align-middle mb-0">
             <thead class="table-light">
               <tr>
-                <th style="width:90px;">User ID</th>
-                <th>Név</th>
-                <th>E-mail</th>
-                <th style="width:90px;">Role ID</th>
-                <th>Szerep neve</th>
-                <th>Szerep címke</th>
+                <th style="width:90px;"><?= $sortHead('ur','user_id','User ID') ?></th>
+                <th><?= $sortHead('ur','user_name','Név') ?></th>
+                <th><?= $sortHead('ur','user_email','E-mail') ?></th>
+                <th style="width:90px;"><?= $sortHead('ur','role_id','Role ID') ?></th>
+                <th><?= $sortHead('ur','role_name','Szerep neve') ?></th>
+                <th><?= $sortHead('ur','role_label','Szerep címke') ?></th>
                 <th style="width:80px;"></th>
               </tr>
             </thead>
@@ -244,12 +274,12 @@ $rangeText = function(array $p): string {
           <table class="table table-striped table-hover align-middle mb-0">
             <thead class="table-light">
               <tr>
-                <th style="width:90px;">Role ID</th>
-                <th>Szerep neve</th>
-                <th>Szerep címke</th>
-                <th style="width:120px;">Permission ID</th>
-                <th>Jogosultság neve</th>
-                <th>Jogosultság címke</th>
+                <th style="width:90px;"><?= $sortHead('rp','role_id','Role ID') ?></th>
+                <th><?= $sortHead('rp','role_name','Szerep neve') ?></th>
+                <th><?= $sortHead('rp','role_label','Szerep címke') ?></th>
+                <th style="width:120px;"><?= $sortHead('rp','permission_id','Permission ID') ?></th>
+                <th><?= $sortHead('rp','perm_name','Jogosultság neve') ?></th>
+                <th><?= $sortHead('rp','perm_label','Jogosultság címke') ?></th>
                 <th style="width:80px;"></th>
               </tr>
             </thead>
