@@ -564,9 +564,22 @@ Prevent admins from removing their own admin role (self-demote guard).
 - `require_can($perm)` – throws a 403 error and halts execution if the permission is missing (handy in controllers or at the top of routes for a quick guard).
 - `require_owner()` – helper for validating record ownership.
 
-Flash messages after redirects.
+### 🧩 Core\View – Modular View Resolution
 
-Polished 403 / 404 / 500 error templates (AdminLTE style).
+The `Core\View` class handles all template rendering.  
+After the recent refactor, the system now automatically detects **which app** invoked `View::render()` and loads the correct view file accordingly.
+
+#### How it works
+
+- Uses `debug_backtrace()` to identify the calling controller (e.g. `App\Apps\Users\Controllers\UserController`).
+- Extracts the app name (`Users`) and searches for views inside  
+  `app/Apps/{AppName}/Views/{view}.php`.
+- If the file is not found in the app's directory, it falls back to the global location:  
+  `app/Views/{view}.php`.
+
+This change ensures full isolation between app-level views —  
+for example, `Users/Views/list.php` and `People/Views/list.php` can now coexist without conflicts.
+
 
 Application admin module (manage apps, menus, routes, manifests).
 

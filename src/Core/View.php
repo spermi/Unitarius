@@ -14,9 +14,9 @@ final class View
         return dirname(__DIR__, 2);
     }
 
-    /**
-     * Register an additional view root (e.g. app/Apps/People/Views).
-     */
+    // ---------------------------------------------------------
+    // Register an additional view root (e.g. app/Apps/People/Views).
+    // ---------------------------------------------------------
     public static function addPath(string $path): void
     {
         $path = rtrim($path, "/\\");
@@ -25,25 +25,51 @@ final class View
         }
     }
 
-    /**
-     * Resolve a view file name (e.g. "people/list") against all registered roots.
-     */
+    // ---------------------------------------------------------
+    // Resolve a view file name (e.g. "people/list") against all registered roots.
+    // Also supports automatic app detection (e.g. Users, People, Rbac).
+    // ---------------------------------------------------------
     private static function resolve(string $name): ?string
     {
-        $name = ltrim($name, "/\\") . '.php';
+        // Logging for debugging
+        //error_log('[VIEW DEBUG] requested=' . $name);
 
-        // 1) Extra roots (e.g. app/Apps/*/Views)
-        foreach (self::$paths as $root) {
-            $file = $root . DIRECTORY_SEPARATOR . $name;
+        $name = ltrim($name, "/\\") . '.php';
+        $base = self::basePath();
+
+        // --- Find the first controller class in stack trace ---
+        $trace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 10);
+        $appName = '';
+        foreach ($trace as $frame) {
+            if (!empty($frame['class']) && preg_match('/App\\\\Apps\\\\([^\\\\]+)\\\\Controllers/', $frame['class'], $m)) {
+                $appName = $m[1];
+                break;
+            }
+        }
+
+        // --- Build candidate list ---
+        $candidates = [];
+
+        // 1️ app-specific folder
+        if ($appName !== '') {
+            $candidates[] = "{$base}/app/Apps/{$appName}/Views/{$name}";
+        }
+
+        // 2️ global fallback
+        $candidates[] = "{$base}/app/Views/{$name}";
+
+        // Logging for debugging    
+        //error_log("[VIEW DEBUG] detected app={$appName}, trying: " . implode(' | ', $candidates));
+
+        foreach ($candidates as $file) {
             if (is_file($file)) {
                 return $file;
             }
         }
 
-        // 2) Legacy/default root: app/Views
-        $fallback = self::basePath() . '/app/Views/' . $name;
-        return is_file($fallback) ? $fallback : null;
+        return null;
     }
+
 
     public static function render(string $view, array $data = [], ?string $layout = 'layout'): string
     {
@@ -76,3 +102,4 @@ final class View
         return (string)ob_get_clean();
     }
 }
+    

@@ -6,20 +6,20 @@ namespace App\Apps\Users\Controllers;
 use Core\DB;
 use Core\View;
 
-/**
- * UserController
- *
- * Handles user listing and (later) management.
- * Accessible only to users with the "users.view" permission.
- */
+// ---------------------------------------------------------
+// UserController
+//
+// Handles user listing and (later) management.
+// Accessible only to users with the "users.view" permission.
+// ---------------------------------------------------------
 final class UserController
 {
-    /**
-     * GET /users
-     *
-     * Displays all users in a simple table (ID, name, email, status, last login, avatar).
-     * Uses AdminLTE styling and referrerpolicy="no-referrer" for Google avatars.
-     */
+    // ---------------------------------------------------------
+    // GET /users
+    //
+    // Displays all users in a simple table (ID, name, email, status, last login, avatar).
+    // Uses AdminLTE styling and referrerpolicy="no-referrer" for Google avatars.
+    // ---------------------------------------------------------
     public function index(): string
     {
         $pdo = DB::pdo();
@@ -33,7 +33,7 @@ final class UserController
         );
         $users = $stmt->fetchAll(\PDO::FETCH_ASSOC) ?: [];
 
-        return View::render('users/list', [
+        return View::render('list', [
             'title' => 'Felhasználók listája',
             'users' => $users,
         ]);

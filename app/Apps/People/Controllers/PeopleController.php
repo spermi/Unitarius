@@ -7,6 +7,13 @@ use Core\DB;
 use Core\View;
 use PDO;
 
+
+// ---------------------------------------------------------
+// PeopleController
+//
+// Handles user listing and (later) management.
+// Accessible only to users with the "people.view" permission.
+// ---------------------------------------------------------
 final class PeopleController
 {
     public function index(): string
