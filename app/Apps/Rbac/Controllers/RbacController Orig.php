@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace App\Apps\Users\Controllers;
+namespace App\Apps\Rbac\Controllers;
 
 use Core\DB;
 use Core\View;
@@ -24,7 +24,7 @@ final class RbacController
     // ---------------------------------------------------------
     public function index(): string
     {
-        return View::render('rbac/index', [
+        return View::render('index', [
             'title' => 'RBAC jogosultságkezelés',
         ]);
     }
@@ -48,7 +48,7 @@ final class RbacController
             // swallow; view will show empty state
         }
 
-        return View::render('rbac/roles', [
+        return View::render('roles', [
             'title' => 'RBAC – Szerepek',
             'roles' => $roles,
         ]);
@@ -73,7 +73,7 @@ final class RbacController
             // swallow; view will show empty state
         }
 
-        return View::render('rbac/permissions', [
+        return View::render('permissions', [
             'title'       => 'RBAC – Jogosultságok',
             'permissions' => $perms,
         ]);
@@ -251,7 +251,7 @@ final class RbacController
     // ---------------------------------------------------------
     public function roleCreateForm(): string
     {
-        return View::render('rbac/role_form', [
+        return View::render('role_form', [
             'title' => 'RBAC – Új szerep',
             'role'  => null,
             'action' => base_url('/rbac/roles/create'),
@@ -308,7 +308,7 @@ final class RbacController
                 $role = $st->fetch(\PDO::FETCH_ASSOC) ?: null;
             } catch (\Throwable) {}
         }
-        return View::render('rbac/role_form', [
+        return View::render('role_form', [
             'title' => 'RBAC – Szerep szerkesztése',
             'role'  => $role,
         ]);
@@ -342,7 +342,7 @@ final class RbacController
         if (function_exists('flash_set')) {
             flash_set($ok ? 'success' : 'error', $ok ? 'Role updated successfully.' : 'Could not update role.');
         }
-        header('Location: ' . base_url('/rbac/roles')); exit;
+        header('Location: ' . base_url('/roles')); exit;
     }
 
     // ---------------------------------------------------------
@@ -389,7 +389,7 @@ final class RbacController
         if (function_exists('flash_set')) {
             flash_set($ok ? 'success' : 'error', $ok ? 'Role deleted.' : 'Could not delete role.');
         }
-        header('Location: ' . base_url('/rbac/roles')); exit;
+        header('Location: ' . base_url('/roles')); exit;
     }
 
 
@@ -402,10 +402,10 @@ final class RbacController
     // ---------------------------------------------------------
     public function permCreateForm(): string
     {
-        return View::render('rbac/perm_form', [
+        return View::render('perm_form', [
             'title' => 'RBAC – Új jogosultság',
             'perm'  => null,
-            'action' => base_url('/rbac/permissions/create'),
+            'action' => base_url('/permissions/create'),
         ]);
     }
 
@@ -436,7 +436,7 @@ final class RbacController
         if (function_exists('flash_set')) {
             flash_set($ok ? 'success' : 'error', $ok ? 'Permission created successfully.' : 'Could not create permission.');
         }
-        header('Location: ' . base_url('/rbac/permissions')); exit;
+        header('Location: ' . base_url('/permissions')); exit;
     }
 
     // ---------------------------------------------------------

@@ -3,4 +3,5 @@
 /Old_versioned_files
 /vendor/
 .env*
+tree.php
 *.log
