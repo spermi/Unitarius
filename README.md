@@ -433,6 +433,25 @@ The RBAC administration module (`app/Apps/Users/Controllers/RbacController.php` 
 - Optional “Reset sort” button per table.
 - Self-demote and “keep one admin” guards for detach operations.
 
+### 🔒 RBAC Security Guards
+
+To prevent accidental loss of administrative access, two safety guards were implemented in the RBAC system:
+
+1. **Self-demote guard**  
+   Prevents an administrator from removing their own `admin` role.  
+   If the logged-in admin attempts to detach their own admin assignment, the action is blocked and an error message is displayed.
+
+2. **Keep-one-admin guard**  
+   Ensures that at least one administrator always exists in the system.  
+   - Blocks detaching the last remaining `admin` role from any user.  
+   - Also prevents deleting the `admin` role itself if it is still assigned to users.
+
+These checks are enforced in:
+- `RbacController::assignmentsDetach()` → user↔role operations  
+- `RbacController::roleDelete()` → role deletion operations  
+
+Both guards display localized flash messages (AdminLTE alerts) and redirect safely back to the RBAC management interface.
+
 
 ---
 

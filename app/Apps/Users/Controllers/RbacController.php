@@ -360,20 +360,38 @@ final class RbacController
         }
 
         $id = (int)($params['id'] ?? 0);
-
         $ok = false;
+
         if ($id > 0) {
             try {
-                // TODO: later guard "keep at least one admin".
-                $st = DB::pdo()->prepare('DELETE FROM roles WHERE id=:id');
+                $pdo = DB::pdo();
+
+                // --- Check role name ---
+                $st = $pdo->prepare('SELECT name FROM roles WHERE id=:id');
+                $st->execute([':id'=>$id]);
+                $roleName = (string)($st->fetchColumn() ?? '');
+
+                // --- Keep-one-admin guard ---
+                if ($roleName === 'admin') {
+                    $count = (int)$pdo->query('SELECT COUNT(*) FROM user_roles WHERE role_id = '.$id)->fetchColumn();
+                    if ($count > 0) {
+                        \flash_set('error', 'Cannot delete the admin role while it is assigned to users.');
+                        header('Location: ' . base_url('/rbac/roles')); exit;
+                    }
+                }
+
+                // If passed guard, safe to delete
+                $st = $pdo->prepare('DELETE FROM roles WHERE id=:id');
                 $ok = $st->execute([':id'=>$id]);
             } catch (\Throwable) {}
         }
+
         if (function_exists('flash_set')) {
             flash_set($ok ? 'success' : 'error', $ok ? 'Role deleted.' : 'Could not delete role.');
         }
         header('Location: ' . base_url('/rbac/roles')); exit;
     }
+
 
     // ---------------------------------------------------------
     // PERMISSIONS – CREATE / EDIT / DELETE
@@ -565,12 +583,12 @@ final class RbacController
 
         $type = (string)($_POST['type'] ?? ''); // 'role_perm' or 'user_role'
         $ok = false;
+
         try {
             if ($type === 'role_perm') {
                 $roleId = (int)($_POST['role_id'] ?? 0);
                 $permId = (int)($_POST['permission_id'] ?? 0);
                 if ($roleId > 0 && $permId > 0) {
-                    // TODO: later guard for "do not remove last admin permission".
                     $ok = DB::pdo()->prepare(
                         'DELETE FROM role_permissions WHERE role_id=:r AND permission_id=:p'
                     )->execute([':r'=>$roleId, ':p'=>$permId]);
@@ -578,9 +596,32 @@ final class RbacController
             } elseif ($type === 'user_role') {
                 $userId = (int)($_POST['user_id'] ?? 0);
                 $roleId = (int)($_POST['role_id'] ?? 0);
+                $current = \current_user();
+
                 if ($userId > 0 && $roleId > 0) {
-                    // TODO: self-demote guard later.
-                    $ok = DB::pdo()->prepare(
+                    $pdo = DB::pdo();
+
+                    // ---- Self-demote guard ----
+                    $st = $pdo->prepare('SELECT name FROM roles WHERE id = :id');
+                    $st->execute([':id' => $roleId]);
+                    $roleName = (string)($st->fetchColumn() ?? '');
+
+                    if ($roleName === 'admin' && $current && (int)$current['id'] === $userId) {
+                        \flash_set('error', 'You cannot remove your own admin role.');
+                        header('Location: ' . base_url('/rbac/assignments')); exit;
+                    }
+
+                    // ---- Keep-one-admin guard ----
+                    if ($roleName === 'admin') {
+                        $count = (int)$pdo->query('SELECT COUNT(*) FROM user_roles WHERE role_id = '.$roleId)->fetchColumn();
+                        if ($count <= 1) {
+                            \flash_set('error', 'At least one admin user must remain.');
+                            header('Location: ' . base_url('/rbac/assignments')); exit;
+                        }
+                    }
+
+                    // If passed both guards → perform delete
+                    $ok = $pdo->prepare(
                         'DELETE FROM user_roles WHERE user_id=:u AND role_id=:r'
                     )->execute([':u'=>$userId, ':r'=>$roleId]);
                 }
@@ -593,4 +634,5 @@ final class RbacController
         header('Location: ' . base_url('/rbac/assignments')); exit;
     }
 
+// End Class
 }

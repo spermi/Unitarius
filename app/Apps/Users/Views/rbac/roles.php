@@ -73,6 +73,7 @@ function e(string $v): string { return htmlspecialchars($v, ENT_QUOTES, 'UTF-8')
                       </a>
                       <form action="<?= base_url('/rbac/roles/'.$id.'/delete') ?>" method="post" class="d-inline"
                             onsubmit="return confirm('Biztosan törlöd a szerepet?');">
+                        <?= csrf_field() ?>
                         <button type="submit" class="btn btn-outline-danger btn-sm">
                           <i class="fa-regular fa-trash-can"></i>
                         </button>

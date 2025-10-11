@@ -1,16 +1,10 @@
 <?php
 // ---------------------------------------------------------
-// Flash message partial
-// Usage:
-//  flash_set('success', 'Saved successfully!');
-//   flash_set('error', 'Something went wrong!');
-//
-// Automatically clears messages after displaying.
+// Flash message partial (AdminLTE style)
 // ---------------------------------------------------------
-
 $flashes = flash_get();
 if (!empty($flashes) && is_array($flashes)): ?>
-  <div class="mt-2 mb-3">
+  <div class="my-3">
     <?php foreach ($flashes as $type => $msg): ?>
       <?php
         $alertClass = match ($type) {
@@ -35,4 +29,14 @@ if (!empty($flashes) && is_array($flashes)): ?>
       </div>
     <?php endforeach; ?>
   </div>
+  <script>
+  document.addEventListener('DOMContentLoaded', () => {
+    setTimeout(() => {
+      document.querySelectorAll('.alert').forEach(el => {
+        const alert = bootstrap.Alert.getOrCreateInstance(el);
+        alert.close();
+      });
+    }, 4000);
+  });
+  </script>
 <?php endif; ?>

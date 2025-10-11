@@ -191,7 +191,6 @@ $rangeText = function(array $p): string {
                 <th style="width:90px;"><?= $sortHead('ur','user_id','User ID') ?></th>
                 <th><?= $sortHead('ur','user_name','Név') ?></th>
                 <th><?= $sortHead('ur','user_email','E-mail') ?></th>
-                <th style="width:90px;"><?= $sortHead('ur','role_id','Role ID') ?></th>
                 <th><?= $sortHead('ur','role_name','Szerep neve') ?></th>
                 <th><?= $sortHead('ur','role_label','Szerep címke') ?></th>
                 <th style="width:80px;"></th>
@@ -210,7 +209,6 @@ $rangeText = function(array $p): string {
                     <td><code><?= (int)($urRow['user_id'] ?? 0) ?></code></td>
                     <td><?= e((string)($urRow['user_name'] ?? '')) ?></td>
                     <td><a href="mailto:<?= e((string)($urRow['user_email'] ?? '')) ?>"><?= e((string)($urRow['user_email'] ?? '')) ?></a></td>
-                    <td><code><?= (int)($urRow['role_id'] ?? 0) ?></code></td>
                     <td><span class="fw-semibold"><?= e((string)($urRow['role_name'] ?? '')) ?></span></td>
                     <td><?= e((string)($urRow['role_label'] ?? '')) ?></td>
                     <td class="text-end">
@@ -277,7 +275,6 @@ $rangeText = function(array $p): string {
                 <th style="width:90px;"><?= $sortHead('rp','role_id','Role ID') ?></th>
                 <th><?= $sortHead('rp','role_name','Szerep neve') ?></th>
                 <th><?= $sortHead('rp','role_label','Szerep címke') ?></th>
-                <th style="width:120px;"><?= $sortHead('rp','permission_id','Permission ID') ?></th>
                 <th><?= $sortHead('rp','perm_name','Jogosultság neve') ?></th>
                 <th><?= $sortHead('rp','perm_label','Jogosultság címke') ?></th>
                 <th style="width:80px;"></th>
@@ -296,7 +293,6 @@ $rangeText = function(array $p): string {
                     <td><code><?= (int)($rpRow['role_id'] ?? 0) ?></code></td>
                     <td><span class="fw-semibold"><?= e((string)($rpRow['role_name'] ?? '')) ?></span></td>
                     <td><?= e((string)($rpRow['role_label'] ?? '')) ?></td>
-                    <td><code><?= (int)($rpRow['permission_id'] ?? 0) ?></code></td>
                     <td><span class="fw-semibold"><?= e((string)($rpRow['perm_name'] ?? '')) ?></span></td>
                     <td><?= e((string)($rpRow['perm_label'] ?? '')) ?></td>
                     <td class="text-end">
@@ -351,18 +347,20 @@ $rangeText = function(array $p): string {
 <!--end::App Content-->
 
 <!-- Choices.js (searchable selects) -->
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css" crossorigin="anonymous">
-<script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js" crossorigin="anonymous"></script>
+<!-- !!!Minifie CSS from normal -->
+<link rel="stylesheet" href="<?= base_url('public/assets/css/choices.css') ?>">
+<script src="<?= base_url('public/assets/js/choices.min.js') ?>"></script>
+
 <script>
-  document.addEventListener('DOMContentLoaded', function () {
-    document.querySelectorAll('.js-choices').forEach(function (el) {
-      new Choices(el, {
-        shouldSort: false,
-        removeItemButton: false,
-        searchPlaceholderValue: 'Keresés...',
-        placeholder: true,
-        placeholderValue: '– válassz –'
-      });
+document.addEventListener('DOMContentLoaded', function () {
+  document.querySelectorAll('.js-choices').forEach(function (el) {
+    new Choices(el, {
+      shouldSort: false,
+      removeItemButton: false,
+      searchPlaceholderValue: 'Keresés...',
+      placeholder: true,
+      placeholderValue: '– válassz –'
     });
   });
+});
 </script>
