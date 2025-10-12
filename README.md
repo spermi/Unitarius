@@ -14,97 +14,110 @@ Minimal PHP microframework built from scratch for learning and internal use.
 
 ---
 
-## Project Structure (with descriptions) 
+## Project Structure (with descriptions)
 
 ```
 unitarius/
 ├─ app/                                   # Application layer (controllers, views, per-app modules)
 │  ├─ Apps/                               # Modular "mini-apps" live here; each app is self-contained
 │  │  ├─ People/                          # People management mini-app
-│  │  │  ├─ Controllers/                  # Controllers for People module
-│  │  │  │  └─ PersonController.php       # Example controller (list/create/show)
-│  │  │  ├─ Views/                        # Views for People module (rendered into global layout)
-│  │  │  │  ├─ list.php                   # People list view
-│  │  │  │  └─ form.php                   # Create/Edit form view
-│  │  │  ├─ routes.php                    # Routes local to People (mounted under prefix from manifest)
-│  │  │  └─ manifest.php                  # Menu/App meta: label, icon, prefix, order, children, perm
-│  │  ├─ Users/                           # Users + (later) RBAC mini-app
-│  │  │  ├─ Controllers/                  # Controllers for user and RBAC management
-│  │  │  │  ├─ UserController.php         # User listing & management
-│  │  │  │  └─ RbacController.php         # RBAC (roles, permissions, assignments)
-│  │  │  ├─ Views/                        # Views for Users and RBAC modules
-│  │  │  │   ├─ rbac/                     # RBAC section views
-│  │  │  │   │  ├─ assignments.php        # Lists user↔role and role↔permission mappings
-│  │  │  │   │  ├─ index.php              # RBAC dashboard (entry point)
-│  │  │  │   │  ├─ permissions.php        # Permission list view
-│  │  │  │   │  └─ roles.php              #    list view
-│  │  │  │   └─ Users/                    # User section views
-│  │  │  │       └─ list.php              # Users list view
-│  │  │  ├─ routes.php                    # Users app routes (with RBAC middleware)
-│  │  │  └─ manifest.php                  # Per-app manifest (menu meta, children: Users, RBAC)
+│  │  │  ├─ Controllers/                  # Business logic layer (CRUD for people)
+│  │  │  │  └── PeopleController.php
+│  │  │  ├─ Views/                        # Views rendered through global layout
+│  │  │  │  ├── list.php                  # People list table
+│  │  │  │  └── form.php                  # Create/Edit person form
+│  │  │  ├── manifest.php                 # Menu manifest for People (used in sidebar)
+│  │  │  └── routes.php                   # Local routes (mounted by prefix)
+│  │  ├─ Rbac/                            # RBAC management app (roles, permissions, assignments)
+│  │  │  ├─ Controllers/
+│  │  │  │  └── RbacController.php        # Handles RBAC CRUD + assignment guards
+│  │  │  ├─ Views/
+│  │  │  │  ├── index.php                 # RBAC dashboard
+│  │  │  │  ├── roles.php                 # Roles list
+│  │  │  │  ├── role_form.php             # Create/Edit role form
+│  │  │  │  ├── permissions.php           # Permissions list
+│  │  │  │  ├── perm_form.php             # Create/Edit permission form
+│  │  │  │  └── assignments.php           # User↔Role and Role↔Permission mappings
+│  │  │  ├── manifest.php                 # Menu manifest for RBAC (used in sidebar)
+│  │  │  └── routes.php                   # RBAC routes (protected by RequirePermission)
+│  │  ├─ Users/                           # User management app (separate from RBAC)
+│  │  │  ├─ Controllers/
+│  │  │  │  └── UserController.php        # Handles user listing and CRUD
+│  │  │  ├─ Views/
+│  │  │  │  ├── list.php                  # User list view (email, status, etc.)
+│  │  │  │  └── user_form.php             # Edit/Create user form
+│  │  │  ├── manifest.php                 # Menu manifest for RBAC (used in sidebar)
+│  │  │  └── routes.php                   # User routes (uses RBAC middleware)
 │  │  └─ (more apps as needed)/
 │  ├─ Controllers/
-│  │  └─ DashboardController.php          # Global dashboard (replaces old HomeController)
-│  │  └─ AuthController.php               # Handles login form, login submission, logout
-│  ├─ Views/
-│  │  ├─ layout.php                       # Global AdminLTE layout (header/sidebar/content/footer)
-│  │  ├─ login.php                        # standalone full-page view for the login screen; independent from the main `layout.php`.
-│  │  ├─ partials/
-│  │  │  ├─ navbar.php                    # AdminLTE top navbar (brand, user menu)
-│  │  │  ├─ sidebar.php                   # AdminLTE sidebar; dynamic, built via MenuLoader
-│  │  │  └─ breadcrumbs.php               # Simple breadcrumbs (optional)
-│  │  ├─ dashboard/
-│  │  │  └─ index.php                     # Dashboard landing page content
-│  └─ errors/
-│     ├─ 404.php                          # Not found page
-│     └─ 500.php                          # Error page (used by ErrorCatcher)
+│  │  ├── AuthController.php              # Handles login, logout, Google OAuth
+│  │  └── DashboardController.php         # Main dashboard (authenticated landing page)
+│  ├─ Models/                             # (Reserved for future ORM-style models)
+│  └─ Views/
+│      ├─ dashboard/
+│      │  └── index.php                   # Dashboard view
+│      ├─ errors/
+│      │  ├── 401.php                     # Unauthorized
+│      │  ├── 403.php                     # Forbidden
+│      │  ├── 404.php                     # Not Found
+│      │  ├── 419.php                     # CSRF token expired
+│      │  └── 500.php                     # Server error
+│      ├─ layout.php                      # Global AdminLTE layout (header, sidebar, footer)
+│      ├─ login.php                       # Standalone login page (not using main layout)
+│      └─ partials/
+│          ├── breadcrumbs.php             # Optional breadcrumb nav
+│          ├── flash.php                   # Flash message renderer
+│          ├── navbar.php                  # Top navigation bar
+│          └── sidebar.php                 # Dynamic sidebar (built by MenuLoader)
 ├─ config/
-│  ├─ apps.php                            # (Optional) App registry if not only manifest-based
-│  └─ menu.core.php                       # Core (non-app) menu entries, e.g., Dashboard
+│  └── menu.core.php                      # Static core menu entries (e.g., Dashboard)
 ├─ public/
 │  ├─ assets/
-│  │  └─ adminlte/                        # AdminLTE V4 static assets (local copy)
-│  │     ├─ css/                          # AdminLTE & dependencies CSS
-│  │     │  ├─ adminlte.min.css           # Core AdminLTE CSS (minified)
-│  │     │  └─ adminlte.css               # (optional) Non-minified version for dev
-│  │     ├─ js/                           # AdminLTE & dependencies JS
-│  │     │  ├─ adminlte.min.js            # Core AdminLTE JS (minified)
-│  │     │  └─ adminlte.js                # (optional) Non-minified version for dev
-│  │     ├─ img/                          # Images used by the template (logos, placeholders)
-│  │     │  ├─ avatar.png                 # Example user avatar used in UI
-│  │     │  └─ boxed-bg.jpg               # Example boxed layout background
-│  │     └─ (optional extras)             # e.g., webfonts/plugins if you add them later
-│  ├─ index.php                           # Front controller (bootstrap + router/kernel)
-│  └─ .htaccess                           # Rewrite rules (route all to public/index.php)
+│  │  ├─ adminlte/                        # AdminLTE v4 static assets (local copy)
+│  │  │  ├─ css/                          # AdminLTE CSS files
+│  │  │  ├─ js/                           # AdminLTE JS files
+│  │  │  └─ img/                          # Template images (logos, avatars, backgrounds)
+│  │  ├─ css/
+│  │  │  ├── custom.css                   # Project custom overrides (e.g., dark mode fixes)
+│  │  │  ├── choices.css                  # Choices.js (dropdown plugin)
+│  │  │  └── choices.min.css
+│  │  └─ js/
+│  │      ├── choices.js                  # Choices.js (local copy)
+│  │      └── choices.min.js
+│  └─ index.php                           # Front controller (bootstraps kernel + router)
 ├─ src/
 │  ├─ Core/
-│  │  ├─ Router.php                       # Minimal router with support for mounting app routes
-│  │  ├─ ErrorHandler.php                 # Unified error/exception handling
-│  │  ├─ DB.php                           # PDO wrapper for PostgreSQL
-│  │  ├─ View.php                         # PHP view rendering with base layout injection
-│  │  ├─ Request.php                      # HTTP request abstraction
-│  │  ├─ Response.php                     # HTTP response abstraction
-│  │  ├─ Middleware.php                   # Middleware interface
-│  │  ├─ Kernel.php                       # Middleware pipeline runner
-│  │  ├─ Helpers.php                      # Global helpers (e.g., base_url(), base_path())
-│  │  └─ MenuLoader.php                   # Scans app manifests, builds menu; child order + defaults
+│  │  ├── DB.php                          # PostgreSQL PDO wrapper
+│  │  ├── ErrorHandler.php                # Exception and error logging
+│  │  ├── Helpers.php                     # Global helpers (base_url, csrf_field, etc.)
+│  │  ├── Kernel.php                      # Middleware pipeline executor
+│  │  ├── MenuLoader.php                  # Builds sidebar menu from manifests
+│  │  ├── Middleware.php                  # Middleware interface
+│  │  ├── Request.php                     # HTTP request abstraction
+│  │  ├── Response.php                    # HTTP response handler
+│  │  ├── Router.php                      # Lightweight route dispatcher
+│  │  └── View.php                        # Modular view resolver (isolates per-app Views/)
 │  └─ Http/
 │     └─ Middleware/
-│        ├─ ErrorCatcher.php              # Catches exceptions, renders 500 (or JSON later)
-│        ├─ TrailingSlash.php             # Redirects /foo/ → /foo
-│        ├─ AuthRequired.php              # Middleware: protect routes, require authentication
-│        └─ GuestOnly.php                 # Middleware: only guests allowed, redirect if logged in
+│         ├── AuthRequired.php             # Restricts routes to authenticated users
+│         ├── ErrorCatcher.php             # Catches exceptions, renders proper error pages
+│         ├── GuestOnly.php                # Restricts login routes for authenticated users
+│         ├── RequirePermission.php        # RBAC middleware for permission checks
+│         └── TrailingSlash.php            # Redirects /foo/ → /foo
 ├─ storage/
 │  ├─ logs/
-│  │  └─ app.log                          # Application error log
-│  └─ sessions/                           # PHP session file storage
+│  │  └── app.log                         # Error log file
+│  └─ sessions/                           # PHP session storage
 ├─ tests/                                 # (future) PHPUnit tests
-├─ composer.json                          # Autoload + deps (phpdotenv, etc.)
-├─ .env                                   # Local environment config (APP_ENV, DB_*)
-└─ README.md                              # Keep updated with structure/menu changes
+├─ composer.json                          # Autoload + dependencies
+├─ composer.lock
+├─ favicon.ico                            # Browser tab icon
+├─ CHANGELOG.md                           # Version and changes history
+├─ RBAC.md                                # Detailed RBAC technical documentation
+├─ DB.md                                  # Database schema and migration notes
+└─ README.md                              # This file – developer documentation
 ```
 
----
 
 ## Composer Setup
 

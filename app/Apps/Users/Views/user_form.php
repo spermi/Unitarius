@@ -54,6 +54,15 @@ $status = (int)($user['status'] ?? 0);
                    value="<?= $email ?>" required maxlength="255">
           </div>
 
+          <?php if ($id === 0): ?>
+            <div class="mb-3">
+              <label for="password" class="form-label">Jelszó</label>
+              <input type="password" class="form-control" id="password" name="password"
+                     minlength="6" maxlength="255" required>
+              <div class="form-text">Minimum 6 karakter, csak új felhasználó létrehozásakor kötelező.</div>
+            </div>
+          <?php endif; ?>
+
           <div class="mb-3">
             <label for="status" class="form-label">Státusz</label>
             <select class="form-select" id="status" name="status">
@@ -78,4 +87,3 @@ $status = (int)($user['status'] ?? 0);
   </div>
 </div>
 <!--end::App Content-->
-    

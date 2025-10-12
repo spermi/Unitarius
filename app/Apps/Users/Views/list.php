@@ -9,12 +9,25 @@ function e(string $v): string {
 }
 ?>
 
+<!-- DataTables (CDN version) -->
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.8/css/dataTables.bootstrap5.min.css">
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.8/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.8/js/dataTables.bootstrap5.min.js"></script>
+
 <!--begin::App Content Header-->
 <div class="app-content-header">
   <div class="container-fluid">
-    <div class="row mb-2">
+    <div class="row mb-2 align-items-center">
       <div class="col-sm-6">
         <h3 class="mb-0"><?= e($title ?? 'Felhasználók') ?></h3>
+      </div>
+      <div class="col-sm-6 text-end">
+        <?php if (function_exists('can') && can('users.create')): ?>
+          <a href="<?= base_url('/users/new') ?>" class="btn btn-primary btn-sm">
+            <i class="fa-solid fa-user-plus"></i> Új Felhasználó
+          </a>
+        <?php endif; ?>
       </div>
     </div>
   </div>
@@ -26,14 +39,9 @@ function e(string $v): string {
   <div class="container-fluid">
 
     <div class="card card-outline card-primary">
-      <div class="card-header">
-        <h3 class="card-title">Felhasználók listája</h3>
-        <div class="card-tools"><!-- reserved for filters/search later --></div>
-      </div>
-
-      <div class="card-body p-0">
+      <div class="card-body">
         <div class="table-responsive">
-          <table class="table table-striped table-hover align-middle mb-0">
+          <table id="usersTable" class="table table-striped table-hover align-middle">
             <thead class="table-light">
               <tr>
                 <th style="width:64px;">Avatar</th>
@@ -41,65 +49,64 @@ function e(string $v): string {
                 <th>Email</th>
                 <th>Státusz</th>
                 <th>Utolsó bejelentkezés</th>
-                <th class="text-end" style="width:150px;">Műveletek</th>
+                <th class="text-end" style="width:90px;">Műveletek</th>
               </tr>
             </thead>
             <tbody>
-              <?php if (empty($users)): ?>
+              <?php foreach ($users as $u): ?>
+                <?php
+                  $id     = (int)($u['id'] ?? 0);
+                  $name   = e((string)($u['name'] ?? ''));
+                  $email  = e((string)($u['email'] ?? ''));
+                  $status = (int)($u['status'] ?? 0);
+                  $last   = $u['last_login_at'] ? date('Y-m-d H:i', strtotime($u['last_login_at'])) : '—';
+                  $avatar = !empty($u['avatar']) ? e($u['avatar']) : $defaultAvatar;
+                ?>
                 <tr>
-                  <td colspan="6" class="text-center p-4 text-secondary">Nincs felhasználó.</td>
-                </tr>
-              <?php else: ?>
-                <?php foreach ($users as $u): ?>
-                  <?php
-                    $name   = e((string)($u['name'] ?? ''));
-                    $email  = e((string)($u['email'] ?? ''));
-                    $id     = (int)($u['id'] ?? 0);
-                    $status = (int)($u['status'] ?? 0);
-                    $last   = (string)($u['last_login_at'] ?? '');
-                    $avRaw  = (string)($u['avatar'] ?? '');
-                    $avatar = $avRaw !== '' ? e($avRaw) : $defaultAvatar;
-                  ?>
-                  <tr>
-                    <td>
-                      <img
-                        src="<?= $avatar ?>"
-                        alt="avatar"
-                        class="rounded-circle"
-                        width="48" height="48"
-                        loading="lazy"
-                        referrerpolicy="no-referrer"
-                        style="object-fit:cover;"
-                      >
-                    </td>
-                    <td><?= $name !== '' ? $name : '<span class="text-secondary">—</span>' ?></td>
-                    <td><a href="mailto:<?= $email ?>"><?= $email !== '' ? $email : '<span class="text-secondary">—</span>' ?></a></td>
-                    <td>
-                      <?php if ($status === 1): ?>
-                        <span class="badge bg-success">Aktív</span>
-                      <?php else: ?>
-                        <span class="badge bg-secondary">Inaktív</span>
-                      <?php endif; ?>
-                    </td>
-                    <td><?= $last !== '' ? e($last) : '<span class="text-secondary">—</span>' ?></td>
-                    <td class="text-end">
-                      <a href="<?= base_url('/users/' . $id . '/edit') ?>" class="btn btn-sm btn-outline-primary">
-                        <i class="fa-solid fa-pen-to-square"></i> Szerkesztés
+                  <td><img src="<?= $avatar ?>" class="rounded-circle" width="48" height="48" style="object-fit:cover;" referrerpolicy="no-referrer"></td>
+                  <td><a href="<?= base_url('/users/' . $id . '/view') ?>" class="text-decoration-none"><?= $name ?></a></td>
+                  <td><a href="mailto:<?= $email ?>"><?= $email ?></a></td>
+                  <td><?= $status ? '<span class="badge bg-success">Aktív</span>' : '<span class="badge bg-secondary">Inaktív</span>' ?></td>
+                  <td><?= e($last) ?></td>
+                  <td class="text-end">
+                    <?php if (can('users.manage')): ?>
+                      <a href="<?= base_url('/users/' . $id . '/edit') ?>" class="btn btn-sm btn-primary" title="Szerkesztés">
+                        <i class="fa-solid fa-pen-to-square"></i>
                       </a>
-                    </td>
-                  </tr>
-                <?php endforeach; ?>
-              <?php endif; ?>
+                    <?php endif; ?>
+                    <?php if (can('users.delete')): ?>
+                      <form method="post" action="<?= base_url('/users/' . $id . '/delete') ?>" class="d-inline" onsubmit="return confirm('Biztosan törlöd ezt a felhasználót?');">
+                        <?= csrf_field() ?>
+                        <button type="submit" class="btn btn-sm btn-danger" title="Törlés">
+                          <i class="fa-solid fa-trash-can"></i>
+                        </button>
+                      </form>
+                    <?php endif; ?>
+                  </td>
+                </tr>
+              <?php endforeach; ?>
             </tbody>
           </table>
         </div>
-      </div>
-
-      <div class="card-footer text-body-secondary small">
-        Összesen: <?= count($users) ?> elem.
       </div>
     </div>
 
   </div>
 </div>
 <!--end::App Content-->
+
+<!-- DataTables init -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  new DataTable('#usersTable', {
+    pageLength: 10,
+    order: [[1, 'asc']],
+    language: {
+      url: 'https://cdn.datatables.net/plug-ins/1.13.7/i18n/hu.json'
+    },
+    columnDefs: [
+      { orderable: false, targets: [0, 5] } // avatar + műveletek oszlop nem rendezhető
+    ]
+  });
+});
+</script>

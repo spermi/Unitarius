@@ -10,6 +10,8 @@ use App\Apps\Users\Controllers\UserController;
 // Mounted automatically by the framework's app loader.
 // Endpoints:
 //  - GET  /users              → Users listing (requires "users.view")
+//  - GET  /users/new          → Create form (requires "users.create")
+//  - POST /users/new          → Save new user (requires "users.create")
 //  - GET  /users/{id}/edit    → Edit form (requires "users.manage")
 //  - POST /users/{id}/edit    → Update user (requires "users.manage")
 // Notes:
@@ -27,6 +29,19 @@ return static function (Router $router): void {
     ]);
 
     // ---------------------------------------------------------
+    // --- USERS CREATE (protected)
+    // ---------------------------------------------------------
+    $router->get('/users/new', [
+        new RequirePermission('users.create'),
+        [UserController::class, 'createForm']
+    ]);
+
+    $router->post('/users/new', [
+        new RequirePermission('users.create'),
+        [UserController::class, 'createSave']
+    ]);
+
+    // ---------------------------------------------------------
     // --- USERS EDIT (protected)
     // ---------------------------------------------------------
     $router->get('/users/{id}/edit', [
@@ -38,4 +53,22 @@ return static function (Router $router): void {
         new RequirePermission('users.manage'),
         [UserController::class, 'edit']
     ]);
+
+    // ---------------------------------------------------------
+    // --- USERS DELETE (protected, permanent delete)
+    // ---------------------------------------------------------
+    $router->post('/users/{id}/delete', [
+        new RequirePermission('users.delete'),
+        [UserController::class, 'delete']
+    ]);
+
+    // ---------------------------------------------------------
+    // --- USERS VIEW (protected)
+    // ---------------------------------------------------------
+    $router->get('/users/{id}/view', [
+        new RequirePermission('users.view'),
+        [UserController::class, 'view']
+    ]);
+
+
 };
