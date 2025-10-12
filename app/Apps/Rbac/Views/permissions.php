@@ -9,13 +9,13 @@ function e(string $v): string { return htmlspecialchars($v, ENT_QUOTES, 'UTF-8')
   <div class="container-fluid d-flex justify-content-between align-items-center flex-wrap">
     <h3 class="mb-0"><?= e($title ?? 'RBAC – Jogosultságok') ?></h3>
     <div class="btn-group mt-2 mt-sm-0">
-      <a class="btn btn-outline-secondary btn-sm" href="<?= base_url('/rbac') ?>">
+      <a class="btn btn-secondary btn-sm" href="<?= base_url('/rbac') ?>">
         <i class="fa-solid fa-shield-halved me-1"></i> RBAC főoldal
       </a>
-      <a class="btn btn-outline-primary btn-sm" href="<?= base_url('/rbac/roles') ?>">
+      <a class="btn btn-primary btn-sm" href="<?= base_url('/rbac/roles') ?>">
         <i class="fa-regular fa-id-badge me-1"></i> Szerepek
       </a>
-      <a class="btn btn-outline-primary btn-sm" href="<?= base_url('/rbac/assignments') ?>">
+      <a class="btn btn-primary btn-sm" href="<?= base_url('/rbac/assignments') ?>">
         <i class="fa-solid fa-diagram-project me-1"></i> Hozzárendelések
       </a>
       <a class="btn btn-success btn-sm" href="<?= base_url('/rbac/permissions/create') ?>">
@@ -68,13 +68,13 @@ function e(string $v): string { return htmlspecialchars($v, ENT_QUOTES, 'UTF-8')
                     <td class="text-nowrap"><?= e((string)($p['created_at'] ?? '')) ?: '—' ?></td>
                     <td class="text-nowrap"><?= e((string)($p['updated_at'] ?? '')) ?: '—' ?></td>
                     <td class="text-end">
-                      <a class="btn btn-outline-primary btn-sm" href="<?= base_url('/rbac/permissions/'.$id.'/edit') ?>">
+                      <a class="btn btn-primary btn-sm" href="<?= base_url('/rbac/permissions/'.$id.'/edit') ?>">
                         <i class="fa-regular fa-pen-to-square"></i>
                       </a>
                       <form action="<?= base_url('/rbac/permissions/'.$id.'/delete') ?>" method="post" class="d-inline"
                             onsubmit="return confirm('Biztosan törlöd a jogosultságot?');">
                         <?= csrf_field() ?>
-                        <button type="submit" class="btn btn-outline-danger btn-sm">
+                        <button type="submit" class="btn btn-danger btn-sm">
                           <i class="fa-regular fa-trash-can"></i>
                         </button>
                       </form>

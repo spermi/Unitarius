@@ -11,7 +11,7 @@ return [
     'perm'    => 'users.manage',
     'children'=> [
         [
-            'label' => 'Felhasználók',
+            'label' => 'Összes Felhasználó',
             'url'   => base_url('/users'),
             'match' => ['#^/users$#', '#^/users/#'],
             'icon'  => 'fa-regular fa-address-book',

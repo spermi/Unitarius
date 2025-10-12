@@ -41,7 +41,7 @@ function e(string $v): string {
                 <th>Email</th>
                 <th>Státusz</th>
                 <th>Utolsó bejelentkezés</th>
-                <th class="text-end" style="width:90px;">ID</th>
+                <th class="text-end" style="width:150px;">Műveletek</th>
               </tr>
             </thead>
             <tbody>
@@ -82,7 +82,11 @@ function e(string $v): string {
                       <?php endif; ?>
                     </td>
                     <td><?= $last !== '' ? e($last) : '<span class="text-secondary">—</span>' ?></td>
-                    <td class="text-end"><code><?= $id ?></code></td>
+                    <td class="text-end">
+                      <a href="<?= base_url('/users/' . $id . '/edit') ?>" class="btn btn-sm btn-outline-primary">
+                        <i class="fa-solid fa-pen-to-square"></i> Szerkesztés
+                      </a>
+                    </td>
                   </tr>
                 <?php endforeach; ?>
               <?php endif; ?>

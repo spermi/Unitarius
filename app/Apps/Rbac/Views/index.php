@@ -39,7 +39,7 @@ function e(string $v): string { return htmlspecialchars($v, ENT_QUOTES, 'UTF-8')
             <p class="card-text">
               Hozz létre és kezeld a szerepeket (pl. <code>admin</code>), majd rendeld hozzá a felhasználókhoz.
             </p>
-            <a href="<?= base_url('/rbac/roles') ?>" class="btn btn-outline-primary btn-sm">Megnyitás</a>
+            <a href="<?= base_url('/rbac/roles') ?>" class="btn btn-primary btn-sm">Megnyitás</a>
           </div>
         </div>
       </div>
@@ -50,7 +50,7 @@ function e(string $v): string { return htmlspecialchars($v, ENT_QUOTES, 'UTF-8')
             <p class="card-text">
               Finomhangolt hozzáférési jogok (pl. <code>users.view</code>, <code>rbac.manage</code>), szerepekhez rendelhetők.
             </p>
-            <a href="<?= base_url('/rbac/permissions') ?>" class="btn btn-outline-primary btn-sm">Megnyitás</a>
+            <a href="<?= base_url('/rbac/permissions') ?>" class="btn btn-primary btn-sm">Megnyitás</a>
           </div>
         </div>
       </div>
@@ -61,7 +61,7 @@ function e(string $v): string { return htmlspecialchars($v, ENT_QUOTES, 'UTF-8')
             <p class="card-text">
               Felhasználó ↔ Szerep és Szerep ↔ Jogosultság kapcsolatok áttekintése.
             </p>
-            <a href="<?= base_url('/rbac/assignments') ?>" class="btn btn-outline-primary btn-sm">Megnyitás</a>
+            <a href="<?= base_url('/rbac/assignments') ?>" class="btn btn-primary btn-sm">Megnyitás</a>
           </div>
         </div>
       </div>

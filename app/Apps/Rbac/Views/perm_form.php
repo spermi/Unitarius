@@ -17,7 +17,7 @@ $label = $isEdit ? (string)($perm['label'] ?? '') : '';
   <div class="container-fluid d-flex justify-content-between align-items-center flex-wrap">
     <h3 class="mb-0"><?= e($title ?? ($isEdit ? 'Jogosultság szerkesztése' : 'Új jogosultság')) ?></h3>
     <div class="btn-group mt-2 mt-sm-0">
-      <a class="btn btn-outline-secondary btn-sm" href="<?= base_url('/rbac/permissions') ?>">
+      <a class="btn btn-secondary btn-sm" href="<?= base_url('/rbac/permissions') ?>">
         <i class="fa-solid fa-key me-1"></i> Vissza a jogosultságokhoz
       </a>
     </div>
@@ -54,7 +54,7 @@ $label = $isEdit ? (string)($perm['label'] ?? '') : '';
         </div>
 
         <div class="card-footer d-flex justify-content-between">
-          <a href="<?= base_url('/rbac/permissions') ?>" class="btn btn-outline-secondary">
+          <a href="<?= base_url('/rbac/permissions') ?>" class="btn btn-secondary">
             <i class="fa-regular fa-circle-left me-1"></i> Mégse
           </a>
           <button type="submit" class="btn btn-primary">

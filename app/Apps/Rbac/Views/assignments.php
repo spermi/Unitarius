@@ -69,13 +69,13 @@ $rangeText = function(array $p): string {
   <div class="container-fluid d-flex justify-content-between align-items-center flex-wrap">
     <h3 class="mb-0"><?= e($title ?? 'RBAC – Hozzárendelések') ?></h3>
     <div class="btn-group mt-2 mt-sm-0">
-      <a class="btn btn-outline-secondary btn-sm" href="<?= base_url('/rbac') ?>">
+      <a class="btn btn-secondary btn-sm" href="<?= base_url('/rbac') ?>">
         <i class="fa-solid fa-shield-halved me-1"></i> RBAC főoldal
       </a>
-      <a class="btn btn-outline-primary btn-sm" href="<?= base_url('/rbac/roles') ?>">
+      <a class="btn btn-primary btn-sm" href="<?= base_url('/rbac/roles') ?>">
         <i class="fa-regular fa-id-badge me-1"></i> Szerepek
       </a>
-      <a class="btn btn-outline-primary btn-sm" href="<?= base_url('/rbac/permissions') ?>">
+      <a class="btn btn-primary btn-sm" href="<?= base_url('/rbac/permissions') ?>">
         <i class="fa-solid fa-key me-1"></i> Jogosultságok
       </a>
     </div>
@@ -217,7 +217,7 @@ $rangeText = function(array $p): string {
                         <input type="hidden" name="type" value="user_role">
                         <input type="hidden" name="user_id" value="<?= (int)($urRow['user_id'] ?? 0) ?>">
                         <input type="hidden" name="role_id" value="<?= (int)($urRow['role_id'] ?? 0) ?>">
-                        <button class="btn btn-sm btn-outline-danger" title="Detach">
+                        <button class="btn btn-sm btn-danger" title="Detach">
                           <i class="fa-solid fa-xmark"></i>
                         </button>
                       </form>
@@ -246,11 +246,11 @@ $rangeText = function(array $p): string {
           </form>
         </div>
         <div class="btn-group">
-          <a class="btn btn-sm btn-outline-secondary <?= $ur['page'] <= 1 ? 'disabled' : '' ?>"
+          <a class="btn btn-sm btn-secondary <?= $ur['page'] <= 1 ? 'disabled' : '' ?>"
              href="<?= $ur['page'] <= 1 ? '#' : e($buildUrl(['ur_page'=>$ur['page']-1,'ur_per'=>$ur['per']])) ?>">
             ‹ Előző
           </a>
-          <a class="btn btn-sm btn-outline-secondary <?= $ur['page'] >= $ur['pages'] ? 'disabled' : '' ?>"
+          <a class="btn btn-sm btn-secondary <?= $ur['page'] >= $ur['pages'] ? 'disabled' : '' ?>"
              href="<?= $ur['page'] >= $ur['pages'] ? '#' : e($buildUrl(['ur_page'=>$ur['page']+1,'ur_per'=>$ur['per']])) ?>">
             Következő ›
           </a>
@@ -301,7 +301,7 @@ $rangeText = function(array $p): string {
                         <input type="hidden" name="type" value="role_perm">
                         <input type="hidden" name="role_id" value="<?= (int)($rpRow['role_id'] ?? 0) ?>">
                         <input type="hidden" name="permission_id" value="<?= (int)($rpRow['permission_id'] ?? 0) ?>">
-                        <button class="btn btn-sm btn-outline-danger" title="Detach">
+                        <button class="btn btn-sm btn-danger" title="Detach">
                           <i class="fa-solid fa-xmark"></i>
                         </button>
                       </form>
@@ -330,11 +330,11 @@ $rangeText = function(array $p): string {
           </form>
         </div>
         <div class="btn-group">
-          <a class="btn btn-sm btn-outline-secondary <?= $rp['page'] <= 1 ? 'disabled' : '' ?>"
+          <a class="btn btn-sm btn-secondary <?= $rp['page'] <= 1 ? 'disabled' : '' ?>"
              href="<?= $rp['page'] <= 1 ? '#' : e($buildUrl(['rp_page'=>$rp['page']-1,'rp_per'=>$rp['per']])) ?>">
             ‹ Előző
           </a>
-          <a class="btn btn-sm btn-outline-secondary <?= $rp['page'] >= $rp['pages'] ? 'disabled' : '' ?>"
+          <a class="btn btn-sm btn-secondary <?= $rp['page'] >= $rp['pages'] ? 'disabled' : '' ?>"
              href="<?= $rp['page'] >= $rp['pages'] ? '#' : e($buildUrl(['rp_page'=>$rp['page']+1,'rp_per'=>$rp['per']])) ?>">
             Következő ›
           </a>

@@ -347,6 +347,7 @@ final class RbacController
 
     // ---------------------------------------------------------
     // POST /rbac/roles/{id}/delete 
+    // Prevents deletion of any role that is still assigned to users.
     // ---------------------------------------------------------
     public function roleDelete(array $params): void
     {
@@ -366,31 +367,28 @@ final class RbacController
             try {
                 $pdo = DB::pdo();
 
-                // --- Check role name ---
-                $st = $pdo->prepare('SELECT name FROM roles WHERE id=:id');
-                $st->execute([':id'=>$id]);
-                $roleName = (string)($st->fetchColumn() ?? '');
-
-                // --- Keep-one-admin guard ---
-                if ($roleName === 'admin') {
-                    $count = (int)$pdo->query('SELECT COUNT(*) FROM user_roles WHERE role_id = '.$id)->fetchColumn();
-                    if ($count > 0) {
-                        \flash_set('error', 'Cannot delete the admin role while it is assigned to users.');
-                        header('Location: ' . base_url('/rbac/roles')); exit;
-                    }
+                // --- Check role usage (guard: prevent deleting in-use roles) ---
+                $count = (int)$pdo->query('SELECT COUNT(*) FROM user_roles WHERE role_id = ' . $id)->fetchColumn();
+                if ($count > 0) {
+                    // If the role is assigned to at least one user, abort deletion
+                    \flash_set('error', 'Cannot delete a role that is still assigned to users.');
+                    header('Location: ' . base_url('/rbac/roles'));
+                    exit;
                 }
 
-                // If passed guard, safe to delete
+                // --- Safe to delete (no user has this role) ---
                 $st = $pdo->prepare('DELETE FROM roles WHERE id=:id');
-                $ok = $st->execute([':id'=>$id]);
+                $ok = $st->execute([':id' => $id]);
             } catch (\Throwable) {}
         }
 
         if (function_exists('flash_set')) {
             flash_set($ok ? 'success' : 'error', $ok ? 'Role deleted.' : 'Could not delete role.');
         }
-        header('Location: ' . base_url('/rbac/roles')); exit;
+        header('Location: ' . base_url('/rbac/roles'));
+        exit;
     }
+
 
 
     // ---------------------------------------------------------

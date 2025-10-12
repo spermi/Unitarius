@@ -551,12 +551,6 @@ When `APP_ENV=local` or `?__debug=1` is added to a URL,
 AuthController methods emit extra headers (e.g., `X-Debug-Token-HasError`)
 and display raw exception traces to aid troubleshooting.
 
-### Next work
-
-Ensure at least one admin always remains in the system.
-
-Prevent admins from removing their own admin role (self-demote guard).
-
 #### RBAC helper functions
 
 - `can($perm)` – returns true when the logged-in user has the given permission (wildcards supported).
@@ -579,6 +573,140 @@ After the recent refactor, the system now automatically detects **which app** in
 
 This change ensures full isolation between app-level views —  
 for example, `Users/Views/list.php` and `People/Views/list.php` can now coexist without conflicts.
+
+
+## 🧩 User Management Permissions (RBAC Policy)
+
+| Permission key | Description | Typical role |
+|-----------------|--------------|---------------|
+| **users.view** | Allows viewing the user list and profile details. | `member`, `manager`, `admin` |
+| **users.manage** | Allows editing other users’ profiles and changing their status (active/inactive). | `manager`, `admin` |
+| **users.create** | Allows creating new user accounts. | `manager`, `admin` |
+| **users.delete** | Allows deleting user accounts (hard or soft delete). Should be restricted to admins only. | `admin` |
+
+> **Notes**
+> - Regular users (members) can always edit their own profile without any explicit permission.  
+> - The `users.manage` permission does *not* include delete rights.  
+> - Deletion (`users.delete`) must be explicitly granted — typically only to admins.
+
+---
+
+## 🔒 RBAC Role Deletion Safety (Extended)
+
+A new safety rule has been added to the RBAC system.
+
+Previously, only the `admin` role was protected from deletion while still assigned to users.
+Now, **no role can be deleted if it is currently assigned to any user**.
+
+This prevents accidental permission loss or orphaned user-role links.
+
+```php
+// Inside RbacController::roleDelete()
+if ($roleName !== '') {
+    $count = (int)$pdo
+        ->query('SELECT COUNT(*) FROM user_roles WHERE role_id = ' . $id)
+        ->fetchColumn();
+
+    if ($count > 0) {
+        \flash_set('error', 'Cannot delete a role while it is assigned to users.');
+        header('Location: ' . base_url('/rbac/roles'));
+        exit;
+    }
+}
+```
+
+All deletion attempts are logged via flash messages and safely redirected back to the roles page.
+
+---
+
+## 🧬 Users Module – Task List (Next Phase)
+
+### ✅ Completed
+
+* Basic user listing (`/users`) with avatars, email, status, and last login.
+* RBAC permission setup (`users.view`, `users.manage`, `users.create`, `users.delete`).
+* View resolver fix (App-based isolation for multiple `list.php` files).
+
+---
+
+### 🧩 In Progress / To Do
+
+#### 1. Edit functionality
+
+* Add "Edit" button to the user list (visible only to `users.manage` or higher).
+* Implement `UserController::editForm()` and `UserController::editSave()` methods.
+* Add `Views/edit.php` form (similar layout to RBAC forms).
+* Adjust button visibility based on permissions (after RBAC checks).
+
+#### 2. Create functionality
+
+* Add “New user” button (visible only to `users.create`).
+* Implement `UserController::createForm()` and `UserController::createSave()`.
+
+#### 3. Delete functionality
+
+* Add delete button (visible only to `users.delete`).
+* Prefer soft-delete (mark user as inactive) instead of full deletion.
+
+#### 4. Flash & validation
+
+* Add validation for name, email, and status fields.
+* Show flash success/error messages after create/edit/delete.
+
+#### 5. Profile editing (self)
+
+* Add `/profile` route for logged-in user.
+* Allow self-edit of name, avatar, and password (no role or status changes).
+* Add “Edit profile” button to the top-right user menu.
+
+---
+
+### 🎨 UI & Layout improvements
+
+#### RBAC (Roles/Permissions) pages
+
+* Reduce or hide `created_at` and `updated_at` columns (too wide).
+* Expand the `label` (description) column for readability.
+
+#### Users list
+
+* Add search bar and pagination.
+* Add “Reset sort” or “Show all” button.
+* Persist sorting preferences via query parameters (`ur_sort`, `rp_sort`).
+* Possibly remove avatars to save space.
+* Replace multiple inline buttons with a compact **Actions dropdown**.
+* Use **filled buttons** (no transparent/outline buttons across UI).
+
+#### Edit page
+
+* Place action buttons **below** the permissions section.
+* Ensure consistent AdminLTE color scheme (primary/success/danger).
+* All buttons use filled background style.
+
+---
+
+### 🧮 Optional Enhancements
+
+* Filter users by status (active/inactive).
+* Integrate Choices.js dropdowns for roles and status.
+* Future: connect users ↔ people table (optional foreign key).
+
+---
+
+## 🏷️ RBAC Permission Label as Description
+
+In the database, the `label` field of a permission or role can be used as a **human-readable description**.
+It supports long, descriptive Hungarian text, for example:
+
+| Permission     | Label (Description)                                   |
+| -------------- | ----------------------------------------------------- |
+| `users.manage` | Mások adatainak szerkesztése, státusz módosítása      |
+| `users.view`   | Felhasználók listájának megtekintése                  |
+| `rbac.manage`  | Szerepek és jogosultságok kezelése az admin felületen |
+
+This allows the admin UI to show meaningful, localized descriptions without changing the internal permission names.
+
+---
 
 
 Application admin module (manage apps, menus, routes, manifests).
