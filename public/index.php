@@ -40,7 +40,8 @@ use Core\View;
 use Core\Request;
 use Core\Response;
 use Core\Kernel;
-use App\Controllers\DashboardController;
+use App\Controllers\DashboardController; //Dashboard
+use App\Controllers\ProfileController;  //Profiles
 use App\Controllers\AuthController;
 use Http\Middleware\{ErrorCatcher, AuthRequired}; // TrailingSlash ideiglenesen OUT
 
@@ -108,6 +109,19 @@ $router->get('/login',  [AuthController::class, 'showLogin']);
 $router->post('/login', [AuthController::class, 'doLogin']);
 $router->get('/logout', [AuthController::class, 'logout']);
 $router->post('/logout', [AuthController::class, 'logout']);
+
+// ---------------------------------------------------------
+// Profile routes (self-view and self-edit)
+// ---------------------------------------------------------
+$router->get('/profile', [
+    new AuthRequired(),
+    [ProfileController::class, 'view']
+]);
+
+$router->post('/profile', [
+    new AuthRequired(),
+    [ProfileController::class, 'save']
+]);
 
 // Favicon
 $router->get('/favicon.ico', fn() => file_get_contents(__DIR__ . '/favicon.ico'));

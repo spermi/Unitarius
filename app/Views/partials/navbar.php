@@ -210,17 +210,23 @@
                     <!--end::User Image-->
 
                   <!--begin::Menu Body-->
-                  <li class="user-body">
+                  <!-- <li class="user-body"> -->
                     <!--begin::Row-->
-                    <div class="row">
-                    </div>
+                    <!-- <div class="row">
+                    </div> -->
                     <!--end::Row-->
-                  </li>
+                  <!-- </li> -->
                   <!--end::Menu Body-->
                   <!--begin::Menu Footer-->
                   <li class="user-footer">
-                    <a href="#" class="btn btn-default btn-flat">Profile</a>
-                    <a href="<?= base_url('logout') ?>"  class="btn btn-default btn-flat float-end">Sign out</a>
+                    <?php if (function_exists('is_logged_in') && is_logged_in()): ?>
+                      <a href="<?= base_url('/profile') ?>" class="btn btn-default btn-flat">
+                        <i class="fa-solid fa-user"></i> Profilom
+                      </a>
+                    <?php endif; ?>
+                    <a href="<?= base_url('/logout') ?>" class="btn btn-default btn-flat float-end">
+                      <i class="fa-solid fa-right-from-bracket"></i> Kilépés
+                    </a>
                   </li>
                   <!--end::Menu Footer-->
                 </ul>

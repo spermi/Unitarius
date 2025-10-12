@@ -14,3 +14,30 @@
   background-color: var(--bs-table-bg) !important;
   color: var(--bs-table-color) !important;
 }
+
+/* ------------------------------------------------------------
+   Readonly input fix for AdminLTE 4 + Bootstrap 5 dark mode
+   ------------------------------------------------------------ */
+
+/* General style for readonly inputs */
+input[readonly],
+textarea[readonly],
+select[readonly] {
+  background-color: var(--bs-body-bg) !important;
+  color: var(--bs-body-color) !important;
+  opacity: 0.8; /* slightly dimmed for visual feedback */
+  cursor: not-allowed;
+}
+
+/* Slightly lighter border and text for better visibility in dark mode */
+[data-bs-theme="dark"] input[readonly],
+[data-bs-theme="dark"] textarea[readonly],
+[data-bs-theme="dark"] select[readonly] {
+  border-color: var(--bs-border-color-translucent, #555) !important;
+  color: #bbb !important;
+}
+
+/* Ensure muted labels have enough contrast in dark mode */
+[data-bs-theme="dark"] label.text-muted {
+  color: #aaa !important;
+}
