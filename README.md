@@ -642,6 +642,50 @@ All deletion attempts are logged via flash messages and safely redirected back t
 
 ---
 
+## 🧩 Users Module – Soft Delete & Admin Tools
+
+### ✅ Implemented Features
+
+#### Soft Delete System
+The Users module now supports **soft deletion** instead of permanent record removal.
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `deleted` | SMALLINT (0/1) | Marks user as deleted |
+| `deleted_at` | TIMESTAMPTZ | Timestamp of deletion |
+| `status` | SMALLINT | 1 = active, 0 = inactive |
+
+**Behavior:**
+- When a user is deleted → `deleted = 1`, `deleted_at = NOW()`, `status = 0`
+- When restored → `deleted = 0`, `deleted_at = NULL`, `status = 0` (remains inactive)
+
+#### Deleted Users Admin Panel
+- Added a new Admin-only page: `/users/deleted`
+- Permission required: `users.admin`
+- Lists only users where `deleted = 1`
+- Accessible from the sidebar with a **red “user-slash” icon**
+- Only Admins can view and restore deleted users
+
+#### User Restore
+- Endpoint: `POST /users/{id}/restore`
+- Function: `UserController::restore()`
+- Restores user to **inactive** status
+- Flash message on success or failure
+- Redirects to `/users/deleted`
+
+#### Role Safety Integration
+- When a user is deleted, they are marked inactive instead of being removed from `user_roles`.
+- The RBAC “keep-one-admin” rule remains consistent, ensuring safe permission structure.
+- Future improvement: automatically revoke roles for deleted users to allow safe role deletion.
+
+#### Database Update Example
+```sql
+ALTER TABLE users 
+ADD COLUMN deleted SMALLINT NOT NULL DEFAULT 0,
+ADD COLUMN deleted_at TIMESTAMPTZ NULL;
+
+---
+
 ### 🧩 In Progress / To Do
 
 #### 1. Edit functionality
@@ -719,13 +763,15 @@ It supports long, descriptive Hungarian text, for example:
 
 This allows the admin UI to show meaningful, localized descriptions without changing the internal permission names.
 
----
+** 🔒 Login and Status Behavior
 
+## Inactive Users
 
-Application admin module (manage apps, menus, routes, manifests).
+* Both local and Google login now deny access if status = 0.
+* Error message: “A fiók inaktív. Kérlek, vedd fel a kapcsolatot az adminisztrátorral.”
 
-MenuLoader DB fallback / export-import.
+Google Login Improvements
 
-Support creating local users.
-
-Email / SMTP configuration.
+* If user exists in DB and is inactive → no new user is created
+* The system now respects status and deleted flags consistently across both login flows
+avatar and name fields are updated only on first login or if empty in DB
