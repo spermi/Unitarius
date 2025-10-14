@@ -78,9 +78,17 @@ public function doLogin(): void
 
     try {
         $pdo = DB::pdo();
-        $stmt = $pdo->prepare('SELECT id,email,password_hash,name,status FROM users WHERE email = :email LIMIT 1');
+        $stmt = $pdo->prepare('SELECT id,email,password_hash,name,status,avatar FROM users WHERE email = :email LIMIT 1');
         $stmt->execute([':email' => $email]);
         $user = $stmt->fetch(\PDO::FETCH_ASSOC) ?: null;
+
+        // --- Inactive account protection ---
+        if ($user && (int)$user['status'] === 0) {
+            $_SESSION['flash_error'] = 'Your account is inactive. Please contact the administrator.';
+            header('Location: ' . base_url('/login'));
+            exit;
+        }
+
     } catch (\Throwable $e) {
         error_log('[Password Login] ' . $e->getMessage() . "\n" . $e->getTraceAsString());
 
@@ -96,11 +104,19 @@ public function doLogin(): void
         exit;
     }
 
-    if (!$user || (int)$user['status'] !== 1 || !password_verify($pass, $user['password_hash'])) {
-        $_SESSION['flash_error'] = 'Invalid credentials.';
+    if (!$user || !password_verify($pass, $user['password_hash'])) {
+    $_SESSION['flash_error'] = 'Invalid credentials.';
+    header('Location: ' . base_url('/login'));
+    exit;
+    }
+
+    // Check active status
+    if ((int)$user['status'] !== 1) {
+        $_SESSION['flash_error'] = 'Your account is inactive. Please contact the administrator.';
         header('Location: ' . base_url('/login'));
         exit;
     }
+
 
     // Update last_login_at + updated_at
     try {
@@ -267,27 +283,50 @@ public function googleCallback(): void
         $stmt->execute([':email' => $email]);
         $user = $stmt->fetch(\PDO::FETCH_ASSOC) ?: null;
 
+        // If user exists but is inactive, block login
+        if ($user && (int)$user['status'] === 0) {
+            $_SESSION['flash_error'] = 'Your account is inactive. Please contact the administrator.';
+            header('Location: ' . base_url('/login'));
+            exit;
+        }
+
+        // Update existing user
         if ($user && (int)$user['status'] === 1) {
-            // Existing user → conditional update + timestamps
             try {
-                $sql    = 'UPDATE users SET last_login_at = NOW(), updated_at = NOW()';
+                // Check if the profile was ever locally modified
+                $check = $pdo->prepare('SELECT created_at, updated_at FROM users WHERE id = :id');
+                $check->execute([':id' => $user['id']]);
+                $meta = $check->fetch(\PDO::FETCH_ASSOC);
+
+                $isNeverEdited = $meta && $meta['created_at'] === $meta['updated_at'];
+
+                // Always update login timestamp
+                $sql = 'UPDATE users SET last_login_at = NOW(), updated_at = NOW()';
                 $params = [':id' => $user['id']];
 
-                if ($nameG !== '' && $nameG !== (string)$user['name']) {
-                    $sql .= ', name = :name';
-                    $params[':name'] = $nameG;
-                }
-                if ($avatarG !== '' && $avatarG !== (string)($user['avatar'] ?? '')) {
-                    $sql .= ', avatar = :avatar';
-                    $params[':avatar'] = $avatarG;
+                // Sync only if never edited locally
+                if ($isNeverEdited) {
+                    if ($nameG !== '' && $nameG !== (string)$user['name']) {
+                        $sql .= ', name = :name';
+                        $params[':name'] = $nameG;
+                    }
+                    if ($avatarG !== '' && $avatarG !== (string)($user['avatar'] ?? '')) {
+                        $sql .= ', avatar = :avatar';
+                        $params[':avatar'] = $avatarG;
+                    }
                 }
 
                 $sql .= ' WHERE id = :id';
                 $upd = $pdo->prepare($sql);
                 $upd->execute($params);
             } catch (\Throwable $e) {
-                @file_put_contents($logFile, '[Google Login] update existing user failed: ' . $e->getMessage() . PHP_EOL, FILE_APPEND);
+                @file_put_contents(
+                    $logFile,
+                    '[Google Login] conditional update failed: ' . $e->getMessage() . PHP_EOL,
+                    FILE_APPEND
+                );
             }
+
 
         } else {
             // Auto-create on first Google login

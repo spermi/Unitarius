@@ -18,5 +18,14 @@ return [
             'order' => 1,
             'perm'  => 'users.view',
         ],
+        [
+            'label' => 'Törölt felhasználók',
+            'url'   => base_url('/users/deleted'),
+            'match' => ['#^/users/deleted#'],
+            'icon'  => 'fa-solid fa-user-slash text-danger',
+            'order' => 900,
+            'perm'  => 'users.admin',
+        ],
+
     ],
 ];

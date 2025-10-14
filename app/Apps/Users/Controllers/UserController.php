@@ -170,7 +170,8 @@ final class UserController
     // ---------------------------------------------------------
     // POST /users/{id}/delete
     //
-    // Permanently deletes a user record.
+    // Soft-deletes a user record: marks as inactive, deleted,
+    // sets deleted_at timestamp and removes all role links.
     // ---------------------------------------------------------
     public function delete(array $params): void
     {
@@ -187,19 +188,44 @@ final class UserController
         $ok = false;
 
         if ($id > 0) {
+            $pdo = DB::pdo();
             try {
-                $stmt = DB::pdo()->prepare('DELETE FROM users WHERE id = :id');
-                $ok = $stmt->execute([':id' => $id]);
-            } catch (\Throwable) {}
+                $pdo->beginTransaction();
+
+                // Remove all role assignments for this user
+                $pdo->prepare('DELETE FROM user_roles WHERE user_id = :id')
+                    ->execute([':id' => $id]);
+
+                // Soft-delete user (mark inactive + deleted)
+                $stmt = $pdo->prepare('
+                    UPDATE users
+                    SET status = 0,
+                        deleted = 1,
+                        deleted_at = NOW(),
+                        updated_at = NOW()
+                    WHERE id = :id
+                ');
+                $stmt->execute([':id' => $id]);
+
+                $pdo->commit();
+                $ok = true;
+            } catch (\Throwable $e) {
+                $pdo->rollBack();
+                error_log('[UserController::delete] ' . $e->getMessage());
+            }
         }
 
         if (function_exists('flash_set')) {
-            flash_set($ok ? 'success' : 'error', $ok ? 'Felhasználó törölve.' : 'Nem sikerült törölni a felhasználót.');
+            flash_set(
+                $ok ? 'success' : 'error',
+                $ok ? 'Felhasználó inaktiválva és töröltként megjelölve.' : 'Nem sikerült törölni a felhasználót.'
+            );
         }
 
         header('Location: ' . base_url('/users'));
         exit;
     }
+
 
     // ---------------------------------------------------------
     // GET /users/{id}/view
@@ -265,6 +291,76 @@ final class UserController
             'roles' => $roles,
             'perms' => $perms,
         ]);
+    }
+
+    // ---------------------------------------------------------
+    // GET /users/deleted
+    // Lists deleted or inactive users for restoration.
+    // ---------------------------------------------------------
+    public function deleted_List(): string
+    {
+        $pdo = DB::pdo();
+        $stmt = $pdo->query("
+            SELECT id, name, email, status, deleted, deleted_at
+            FROM users
+            WHERE deleted = 1 
+            ORDER BY deleted_at DESC NULLS LAST, id ASC
+        ");
+        $users = $stmt->fetchAll(\PDO::FETCH_ASSOC) ?: [];
+
+        return View::render('deleted_list', [
+            'title' => 'Törölt / inaktív felhasználók',
+            'perm'  => null,
+            'users' => $users,
+        ]);
+    }
+
+    // ---------------------------------------------------------
+    // POST /users/{id}/restore
+    // Restores a previously deleted user (admin only).
+    // ---------------------------------------------------------
+    public function restore(array $params): void
+    {
+        if (!\verify_csrf()) {
+            http_response_code(419);
+            echo View::render('errors/419', [
+                'title' => 'Page Expired',
+                'message' => 'Invalid or missing CSRF token.',
+            ]);
+            exit;
+        }
+
+        $id = (int)($params['id'] ?? 0);
+        $ok = false;
+
+        if ($id > 0) {
+            try {
+                $pdo = DB::pdo();
+                $stmt = $pdo->prepare('
+                    UPDATE users
+                    SET deleted = 0,
+                        deleted_at = NULL,
+                        status = 0,
+                        updated_at = NOW()
+                    WHERE id = :id
+                ');
+                $ok = $stmt->execute([':id' => $id]);
+            } catch (\Throwable $e) {
+                if (function_exists('app_log')) {
+                    app_log('[UserController::restore] ' . $e->getMessage());
+                }
+            }
+        }
+
+        if (function_exists('flash_set')) {
+            flash_set(
+                $ok ? 'success' : 'error',
+                $ok ? 'Felhasználó sikeresen visszaállítva.' : 'Nem sikerült visszaállítani a felhasználót.'
+            );
+        }
+
+        header('Location: ' . base_url('/users/deleted'));
+        exit;
     }
 
 

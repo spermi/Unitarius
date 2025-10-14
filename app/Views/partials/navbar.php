@@ -168,27 +168,35 @@
             </ul> 
               <!--end::Color Mode Toggler-->
               <?php
-                // Defaults Fallback avatar and name
-                $defaultAvatar = base_url('public/assets/adminlte/img/user.png');
+                  // --- Default fallback avatar ---
+                  $defaultAvatar = base_url('public/assets/adminlte/img/user.png');
 
-                // Current local user (from session)
-                $cu   = \current_user(); // helper from Core\Helpers.php
-                $name = $cu['name'] ?? 'User';
+                  // --- Current logged-in user (from session helper) ---
+                  $cu = \current_user(); // helper from Core\Helpers.php
+                  $name = $cu['name'] ?? 'User';
 
-                // Prefer Google avatar if ever available (even for local login)
-                $avatar = $defaultAvatar;
-                if (!empty($_SESSION['oauth_avatar'])) {
-                    $avatar = htmlspecialchars($_SESSION['oauth_avatar'], ENT_QUOTES, 'UTF-8');
-                }
+                  // --- Determine avatar priority ---
+                  // 1. Avatar from user record
+                  $avatar = !empty($cu['avatar']) ? htmlspecialchars($cu['avatar'], ENT_QUOTES, 'UTF-8') : '';
 
-                // Prefer Google name only if the current session is from Google auth
-                if (!empty($_SESSION['auth_provider']) && $_SESSION['auth_provider'] === 'google' && !empty($_SESSION['oauth_name'])) {
-                    $name = htmlspecialchars($_SESSION['oauth_name'], ENT_QUOTES, 'UTF-8');
-                } else {
-                    $name = htmlspecialchars((string)$name, ENT_QUOTES, 'UTF-8');
-                }
-              ?>
+                  // 2. If missing, use OAuth avatar (if exists)
+                  if ($avatar === '' && !empty($_SESSION['oauth_avatar'])) {
+                      $avatar = htmlspecialchars($_SESSION['oauth_avatar'], ENT_QUOTES, 'UTF-8');
+                  }
 
+                  // 3. Fallback to default
+                  if ($avatar === '') {
+                      $avatar = $defaultAvatar;
+                  }
+
+                  // --- Determine display name ---
+                  // Prefer Google name if authenticated via Google
+                  if (!empty($_SESSION['auth_provider']) && $_SESSION['auth_provider'] === 'google' && !empty($_SESSION['oauth_name'])) {
+                      $name = htmlspecialchars($_SESSION['oauth_name'], ENT_QUOTES, 'UTF-8');
+                  } else {
+                      $name = htmlspecialchars((string)$name, ENT_QUOTES, 'UTF-8');
+                  }
+                 ?>
               <!--begin::User Menu Dropdown-->
               <li class="nav-item dropdown user-menu">
                 <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown">

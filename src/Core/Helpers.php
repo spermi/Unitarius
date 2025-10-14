@@ -77,6 +77,7 @@ namespace {
                 'email'  => (string)($user['email'] ?? ''),
                 'name'   => (string)($user['name'] ?? ''),
                 'status' => (int)($user['status'] ?? 1),
+                'avatar' => (string)($user['avatar'] ?? ''),
             ];
             try {
                 if (class_exists(\Core\DB::class) && !empty($user['id'])) {

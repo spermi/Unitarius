@@ -6,7 +6,9 @@ ini_set('display_startup_errors','1');
 ini_set('log_errors','1');
 error_reporting(E_ALL);
 
+// ---------------------------------------------------------
 // ---- Session bootstrap ----
+// ---------------------------------------------------------
 $sessionPath = dirname(__DIR__) . '/storage/sessions';
 if (is_dir($sessionPath) || @mkdir($sessionPath, 0777, true)) {
     ini_set('session.save_path', $sessionPath);
@@ -29,6 +31,7 @@ session_set_cookie_params([
 ]);
 
 session_start();
+
 // --------------------------------------------
 
 require __DIR__ . '/../vendor/autoload.php';
@@ -100,6 +103,14 @@ foreach (glob($basePath . '/app/Apps/*/routes.php') as $file) {
         $mount($router);
     }
 }
+
+
+// debug: log all routes to file
+// file_put_contents(
+//     dirname(__DIR__) . '/storage/logs/routes_debug.log',
+//     print_r($router, true)
+// );
+
 
 // ---------------------------------------------------------
 // Core routes

@@ -83,8 +83,8 @@ final class ProfileController
         if (!verify_csrf()) {
             http_response_code(419);
             echo View::render('errors/419', [
-                'title' => 'Érvénytelen CSRF token',
-                'message' => 'A kérés biztonsági ellenőrzése nem sikerült.',
+                'title' => 'Invalid CSRF token',
+                'message' => 'The security verification for this request failed.',
             ]);
             exit;
         }
@@ -100,29 +100,39 @@ final class ProfileController
         $avatar = trim((string)($_POST['avatar'] ?? ''));
 
         $ok = false;
+
         if ($name !== '') {
             try {
-                $stmt = DB::pdo()->prepare('
+                $pdo = DB::pdo();
+
+                // Always ensure updated_at moves forward to block Google sync overwrite
+                $stmt = $pdo->prepare('
                     UPDATE users
-                    SET name = :name, avatar = :avatar, updated_at = NOW()
+                    SET name = :name,
+                        avatar = :avatar,
+                        updated_at = NOW()
                     WHERE id = :id
                 ');
+
                 $ok = $stmt->execute([
                     ':name'   => $name,
                     ':avatar' => $avatar,
                     ':id'     => $id,
                 ]);
-            } catch (\Throwable) {}
+            } catch (\Throwable $e) {
+                error_log('[ProfileController] save() failed: ' . $e->getMessage());
+            }
         }
 
         if (function_exists('flash_set')) {
             flash_set(
                 $ok ? 'success' : 'error',
-                $ok ? 'Profil sikeresen frissítve.' : 'Nem sikerült frissíteni a profilt.'
+                $ok ? 'Profile successfully updated.' : 'Failed to update profile.'
             );
         }
 
         header('Location: ' . base_url('/profile'));
         exit;
     }
+
 }

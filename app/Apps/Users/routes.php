@@ -70,5 +70,20 @@ return static function (Router $router): void {
         [UserController::class, 'view']
     ]);
 
+    // ---------------------------------------------------------
+    // --- USERS ADMIN PANEL (only for users.admin permission) ---
+    // ---------------------------------------------------------
+    $router->get('/users/deleted', [
+        new RequirePermission('users.admin'),
+        [UserController::class, 'deletedList']
+    ]);
+
+    // ---------------------------------------------------------
+    // --- RESTORE deleted user (POST) ---
+    // ---------------------------------------------------------
+    $router->post('/users/{id}/restore', [
+        new RequirePermission('users.admin'),
+        [UserController::class, 'restore']
+    ]);
 
 };
