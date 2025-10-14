@@ -134,6 +134,13 @@ $router->post('/profile', [
     [ProfileController::class, 'save']
 ]);
 
+// ---------------------------------------------------------
+// Messages routes
+// ---------------------------------------------------------
+$router->get('/messages', [\App\Controllers\MessagesController::class, 'index']);
+$router->post('/messages/{id}/read', [\App\Controllers\MessagesController::class, 'markRead']);
+
+
 // Favicon
 $router->get('/favicon.ico', fn() => file_get_contents(__DIR__ . '/favicon.ico'));
 

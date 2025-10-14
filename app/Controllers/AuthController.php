@@ -5,6 +5,7 @@ namespace App\Controllers;
 
 use Core\DB;
 use Core\View;
+use Core\Messenger;
 
 final class AuthController
 {
@@ -14,17 +15,14 @@ final class AuthController
 // ---------------------------------------------------------
 public function showLogin(): string
 {
-    // Redirect if already logged in
     if (is_logged_in()) {
         header('Location: ' . base_url('/'));
         exit;
     }
 
-    // Default error message from session (if any)
     $error = $_SESSION['flash_error'] ?? null;
     unset($_SESSION['flash_error']);
 
-    // Optional: also support ?error=... query param
     if (isset($_GET['error']) && !$error) {
         switch ($_GET['error']) {
             case 'session_expired':
@@ -42,11 +40,9 @@ public function showLogin(): string
         }
     }
 
-    // Prevent caching of login page (security)
     header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
     header('Pragma: no-cache');
 
-    // Render standalone login view (no global layout)
     ob_start();
     require __DIR__ . '/../Views/login.php';
     return (string)ob_get_clean();
@@ -56,7 +52,6 @@ public function showLogin(): string
 // ---------------------------------------------------------
 // POST /login
 // ---------------------------------------------------------
-
 public function doLogin(): void
 {
     $email = trim((string)($_POST['email'] ?? ''));
@@ -70,7 +65,6 @@ public function doLogin(): void
         exit;
     }
 
-    // Env-based debug: show details only in local (or with ?__debug=1)
     $__debug = (($_ENV['APP_ENV'] ?? 'production') === 'local') || isset($_GET['__debug']);
     if ($__debug) {
         header('X-Debug-Login-Email: ' . $email);
@@ -82,7 +76,6 @@ public function doLogin(): void
         $stmt->execute([':email' => $email]);
         $user = $stmt->fetch(\PDO::FETCH_ASSOC) ?: null;
 
-        // --- Inactive account protection ---
         if ($user && (int)$user['status'] === 0) {
             $_SESSION['flash_error'] = 'Your account is inactive. Please contact the administrator.';
             header('Location: ' . base_url('/login'));
@@ -91,43 +84,36 @@ public function doLogin(): void
 
     } catch (\Throwable $e) {
         error_log('[Password Login] ' . $e->getMessage() . "\n" . $e->getTraceAsString());
-
         if ($__debug) {
             header('Content-Type: text/plain; charset=utf-8');
             http_response_code(500);
             echo "Password login exception:\n" . $e->getMessage() . "\n\n" . $e->getTraceAsString();
             exit;
         }
-
         $_SESSION['flash_error'] = 'Login temporarily unavailable.';
         header('Location: ' . base_url('/login'));
         exit;
     }
 
     if (!$user || !password_verify($pass, $user['password_hash'])) {
-    $_SESSION['flash_error'] = 'Invalid credentials.';
-    header('Location: ' . base_url('/login'));
-    exit;
+        $_SESSION['flash_error'] = 'Invalid credentials.';
+        header('Location: ' . base_url('/login'));
+        exit;
     }
 
-    // Check active status
     if ((int)$user['status'] !== 1) {
         $_SESSION['flash_error'] = 'Your account is inactive. Please contact the administrator.';
         header('Location: ' . base_url('/login'));
         exit;
     }
 
-
-    // Update last_login_at + updated_at
     try {
         $upd = $pdo->prepare('UPDATE users SET last_login_at = NOW(), updated_at = NOW() WHERE id = :id');
         $upd->execute([':id' => $user['id']]);
     } catch (\Throwable $e) {
         error_log('[Password Login] failed to update last_login_at: ' . $e->getMessage());
-        // do not block login on update failure
     }
 
-    // success
     unset($_SESSION['auth_provider'], $_SESSION['oauth_name'], $_SESSION['oauth_avatar']);
     login_user($user);
 
@@ -139,26 +125,19 @@ public function doLogin(): void
 
 
 // ---------------------------------------------------------
-// POST /logout  
+// POST /logout
 // ---------------------------------------------------------
-
 public function logout(): void
 {
-    // Clear OAuth and any other session decorations
     unset($_SESSION['auth_provider'], $_SESSION['oauth_name'], $_SESSION['oauth_avatar']);
-
-    // Optional: clear flash errors/messages if present
     unset($_SESSION['flash_error'], $_SESSION['intended']);
 
-    // Force session regeneration to prevent session fixation
     if (session_status() === PHP_SESSION_ACTIVE) {
         session_regenerate_id(true);
     }
 
-    // Call core logout helper (clears session data + cookie)
     logout_user();
 
-    // Optional: extra cookie invalidation (redundant but safe)
     if (ini_get('session.use_cookies')) {
         $params = session_get_cookie_params();
         setcookie(session_name(), '', time() - 42000, $params['path'], $params['domain'], $params['secure'], $params['httponly']);
@@ -172,12 +151,10 @@ public function logout(): void
 // ---------------------------------------------------------
 // GET /auth/google
 // ---------------------------------------------------------
-
 public function googleRedirect(): void
 {
     unset($_SESSION['flash_error']);
 
-    // Read from .env; fallback a callback URL-re
     $clientId     = $_ENV['GOOGLE_CLIENT_ID']     ?? null;
     $clientSecret = $_ENV['GOOGLE_CLIENT_SECRET'] ?? null;
     $redirectUri  = $_ENV['GOOGLE_REDIRECT_URI']  ?? base_url('/auth/google/callback');
@@ -201,7 +178,6 @@ public function googleRedirect(): void
 }
 
 
-
 // ---------------------------------------------------------
 // GET /auth/google/callback
 // ---------------------------------------------------------
@@ -209,7 +185,6 @@ public function googleCallback(): void
 {
     unset($_SESSION['flash_error']);
 
-    // Debug only in local (or when ?__debug=1)
     $__debug = (($_ENV['APP_ENV'] ?? 'production') === 'local') || isset($_GET['__debug']);
     if ($__debug) {
         header('X-Debug-AppEnv: ' . ($_ENV['APP_ENV'] ?? 'unknown'));
@@ -232,25 +207,21 @@ public function googleCallback(): void
         exit;
     }
 
-    // File log path (no base_path() to avoid namespace issues)
     $logFile = dirname(__DIR__, 2) . '/storage/logs/app.log';
     $logDir  = dirname($logFile);
     if (!is_dir($logDir)) { @mkdir($logDir, 0777, true); }
 
     try {
-        // Optional CA for local WAMP (.env: CA_BUNDLE=...)
         $ca = $_ENV['CA_BUNDLE'] ?? null;
         $httpOptions = ($ca && is_file($ca)) ? ['verify' => $ca] : [];
         $httpClient = new \GuzzleHttp\Client($httpOptions);
 
-        // Create client
         $client = new \Google_Client();
         $client->setHttpClient($httpClient);
         $client->setClientId($clientId);
         $client->setClientSecret($clientSecret);
         $client->setRedirectUri($redirectUri);
 
-        // Token exchange
         $token = $client->fetchAccessTokenWithAuthCode($_GET['code']);
         if ($__debug) { header('X-Debug-Token-HasError: ' . (isset($token['error']) ? '1' : '0')); }
         if (isset($token['error']) || empty($token['access_token'])) {
@@ -261,8 +232,6 @@ public function googleCallback(): void
         }
 
         $client->setAccessToken($token['access_token']);
-
-        // Fetch Google profile
         $oauth = new \Google_Service_Oauth2($client);
         $info  = $oauth->userinfo->get();
 
@@ -278,33 +247,26 @@ public function googleCallback(): void
 
         $pdo = \Core\DB::pdo();
 
-        // Try find existing user
         $stmt = $pdo->prepare('SELECT id,email,password_hash,name,status,avatar FROM users WHERE email = :email LIMIT 1');
         $stmt->execute([':email' => $email]);
         $user = $stmt->fetch(\PDO::FETCH_ASSOC) ?: null;
 
-        // If user exists but is inactive, block login
         if ($user && (int)$user['status'] === 0) {
             $_SESSION['flash_error'] = 'Your account is inactive. Please contact the administrator.';
             header('Location: ' . base_url('/login'));
             exit;
         }
 
-        // Update existing user
         if ($user && (int)$user['status'] === 1) {
             try {
-                // Check if the profile was ever locally modified
                 $check = $pdo->prepare('SELECT created_at, updated_at FROM users WHERE id = :id');
                 $check->execute([':id' => $user['id']]);
                 $meta = $check->fetch(\PDO::FETCH_ASSOC);
-
                 $isNeverEdited = $meta && $meta['created_at'] === $meta['updated_at'];
 
-                // Always update login timestamp
                 $sql = 'UPDATE users SET last_login_at = NOW(), updated_at = NOW()';
                 $params = [':id' => $user['id']];
 
-                // Sync only if never edited locally
                 if ($isNeverEdited) {
                     if ($nameG !== '' && $nameG !== (string)$user['name']) {
                         $sql .= ', name = :name';
@@ -327,17 +289,15 @@ public function googleCallback(): void
                 );
             }
 
-
         } else {
-            // Auto-create on first Google login
             try {
                 $randomPlain = bin2hex(random_bytes(32));
                 $hash = password_hash($randomPlain, PASSWORD_BCRYPT);
 
                 $ins = $pdo->prepare(
                     'INSERT INTO users (email, password_hash, name, status, avatar, last_login_at, created_at, updated_at)
-                    VALUES (:email, :ph, :name, 1, :avatar, NOW(), NOW(), NOW())
-                    RETURNING id, email, password_hash, name, status, avatar'
+                     VALUES (:email, :ph, :name, 1, :avatar, NOW(), NOW(), NOW())
+                     RETURNING id, email, password_hash, name, status, avatar'
                 );
                 $ins->execute([
                     ':email'  => $email,
@@ -350,6 +310,17 @@ public function googleCallback(): void
                 if (!$user) {
                     throw new \RuntimeException('Insert RETURNING returned no row');
                 }
+
+                // 🔔 Notify managers about the new user
+                Messenger::broadcastPermission(
+                    'users.manage',
+                    'Új felhasználó!',
+                    //'Egy új felhasználó csatlakozott a rendszerhez: ' . ($user['name'] ?? $user['email']),
+                    ($user['name'] ?? $user['email']),
+                    base_url('/users/' . $user['id']),
+                    'new_user'
+                );
+
             } catch (\Throwable $e) {
                 @file_put_contents($logFile, '[Google Login] insert new user failed: ' . $e->getMessage() . PHP_EOL, FILE_APPEND);
                 $_SESSION['flash_error'] = 'Nem sikerült létrehozni a felhasználót.';
@@ -358,14 +329,11 @@ public function googleCallback(): void
             }
         }
 
-        // Mark provider + session extras for UI
         $_SESSION['auth_provider'] = 'google';
         if ($nameG   !== '') { $_SESSION['oauth_name']   = $nameG; }
         if ($avatarG !== '') { $_SESSION['oauth_avatar'] = $avatarG; }
 
-        // Success: same helper as password login
         login_user($user);
-
         $intended = $_SESSION['intended'] ?? null;
         unset($_SESSION['intended']);
         header('Location: ' . ($intended ?: base_url('/')));
@@ -390,6 +358,5 @@ public function googleCallback(): void
         exit;
     }
 }
-
 
 }

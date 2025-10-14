@@ -11,7 +11,7 @@ function e(string $v): string {
 <div class="app-content-header">
   <div class="container-fluid">
     <div class="row mb-2 align-items-center">
-      <div class="col-sm-6">
+      <div class="col-sm-12">
         <h3 class="mb-0 text-danger">
           <i class="fa-solid fa-user-shield me-2"></i><?= e($title ?? 'Törölt / inaktív felhasználók') ?>
         </h3>
@@ -47,7 +47,7 @@ function e(string $v): string {
               <?php if (empty($users)): ?>
                 <tr>
                   <td colspan="6" class="text-center p-4 text-secondary">
-                    <i class="fa-solid fa-circle-check me-1"></i> Nincsenek törölt vagy inaktív felhasználók.
+                    <i class="fa-solid fa-circle-check me-1"></i> Nincsenek törölt felhasználók.
                   </td>
                 </tr>
               <?php else: ?>

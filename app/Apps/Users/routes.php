@@ -75,7 +75,7 @@ return static function (Router $router): void {
     // ---------------------------------------------------------
     $router->get('/users/deleted', [
         new RequirePermission('users.admin'),
-        [UserController::class, 'deletedList']
+        [UserController::class, 'deleted_List']
     ]);
 
     // ---------------------------------------------------------

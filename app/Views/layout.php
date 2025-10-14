@@ -39,7 +39,7 @@
 </head>
 <!--end::Head-->
 <!--begin::Body-->
-<body class="layout-fixed sidebar-expand-lg sidebar-mini bg-body-tertiary">
+<body class="layout-fixed sidebar-expand-lg sidebar-collapse bg-body-tertiary">
   <!--begin::App Wrapper-->
   <div class="app-wrapper">
   <!-- Show Navbar and Sidebar only when logged in -->
@@ -69,12 +69,12 @@
         <!--end::App Content Header-->
 
         <!--begin::App Content-->
-        <div class="app-content">
-          <div class="container-fluid">
+        <!-- <div class="app-content">
+          <div class="container-fluid"> -->
             <?php if (is_logged_in()) { require dirname(__DIR__).'/Views/partials/flash.php'; } ?>
             <?= $content ?? '' ?>
-          </div>
-        </div>
+          <!-- </div>
+        </div> -->
         <!--end::App Content-->
       </main>
       <!--end::App Main-->

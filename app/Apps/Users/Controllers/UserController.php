@@ -73,19 +73,37 @@ final class UserController
         $pass   = trim((string)($_POST['password'] ?? ''));
 
         $ok = false;
+        $newUserId = null;
+
         if ($name !== '' && $email !== '' && $pass !== '') {
             try {
                 $stmt = DB::pdo()->prepare('
                     INSERT INTO users (name, email, password_hash, status, created_at, updated_at)
                     VALUES (:name, :email, crypt(:pass, gen_salt(\'bf\', 12)), :status, NOW(), NOW())
+                    RETURNING id
                 ');
-                $ok = $stmt->execute([
+                $stmt->execute([
                     ':name'   => $name,
                     ':email'  => $email,
                     ':pass'   => $pass,
                     ':status' => $status,
                 ]);
-            } catch (\Throwable) {}
+                $newUserId = (int)$stmt->fetchColumn();
+                $ok = $newUserId > 0;
+            } catch (\Throwable $e) {
+                error_log('[UsersController::createSave] ' . $e->getMessage());
+            }
+        }
+
+        if ($ok && $newUserId) {
+            // 🔔 Notify managers about the new user
+            \Core\Messenger::broadcastPermission(
+                'users.manage',
+                'Új felhasználó létrehozva',
+                'Egy új felhasználó lett létrehozva: ' . $name . ' (' . $email . ')',
+                base_url('/users/' . $newUserId),
+                'new_user'
+            );
         }
 
         if (function_exists('flash_set')) {

@@ -21,83 +21,63 @@
           <!--begin::End Navbar Links-->
           <ul class="navbar-nav ms-auto">
 
-            <!--begin::Messages Dropdown Menu-->
-            <li class="nav-item dropdown">
-              <a class="nav-link" data-bs-toggle="dropdown" href="#">
-                <i class="bi bi-chat-text"></i>
-                <span class="navbar-badge badge text-bg-danger">3</span>
-              </a>
-              <div class="dropdown-menu dropdown-menu-lg dropdown-menu-end">
-                <a href="#" class="dropdown-item">
-                  <!--begin::Message-->
-                  <div class="d-flex">
-                    <div class="flex-shrink-0">
-                      <img src="<?= base_url('public/assets/adminlte/img/user.png') ?>" alt="User Avatar" class="img-size-50 rounded-circle me-3" >
+          <?php
+          // --- Unread messages for current user ---
+          $cu = \current_user();
+          $messages = [];
+          if ($cu && isset($cu['id'])) {
+              $messages = \Core\Messenger::getUnreadFor((int)$cu['id']);
+          }
+          $unreadCount = count($messages);
+          ?>
+          <!--begin::Messages Dropdown Menu-->
+          <li class="nav-item dropdown">
+            <a class="nav-link" data-bs-toggle="dropdown" href="#">
+              <i class="bi bi-chat-text"></i>
+              <?php if ($unreadCount > 0): ?>
+                <span class="navbar-badge badge text-bg-danger"><?= $unreadCount ?></span>
+              <?php endif; ?>
+            </a>
+            <div class="dropdown-menu dropdown-menu-lg dropdown-menu-end">
+              <?php if (empty($messages)): ?>
+                <span class="dropdown-item text-center text-secondary fs-7">Nincs új üzenet</span>
+              <?php else: ?>
+                <?php foreach ($messages as $m): ?>
+                  <?php
+                    // Avatar priority: sender avatar → fallback image
+                    $avatarSrc = !empty($m['sender_avatar'])
+                        ? htmlspecialchars($m['sender_avatar'], ENT_QUOTES, 'UTF-8')
+                        : base_url('public/assets/adminlte/img/user.png');
+                  ?>
+                  <a href="<?= htmlspecialchars($m['url'] ?? '#', ENT_QUOTES, 'UTF-8') ?>" class="dropdown-item">
+                    <div class="d-flex">
+                      <div class="flex-shrink-0">
+                        <img src="<?= $avatarSrc ?>" referrerpolicy="no-referrer"
+                            alt="User Avatar"
+                            class="img-size-50 rounded-circle me-3">
+                      </div>
+                      <div class="flex-grow-1">
+                        <h3 class="dropdown-item-title">
+                          <?= htmlspecialchars($m['title'], ENT_QUOTES, 'UTF-8') ?>
+                        </h3>
+                        <p class="fs-7 "><?= htmlspecialchars($m['body'], ENT_QUOTES, 'UTF-8') ?></p>
+                        <p class="fs-7 text-secondary">
+                          <i class="bi bi-clock-fill me-1"></i>
+                          <?= date('Y.m.d H:i', strtotime($m['created_at'])) ?>
+                        </p>
+                      </div>
                     </div>
-                    <div class="flex-grow-1">
-                      <h3 class="dropdown-item-title">
-                        Brad Diesel
-                        <span class="float-end fs-7 text-danger"
-                          ><i class="bi bi-star-fill"></i
-                        ></span>
-                      </h3>
-                      <p class="fs-7">Call me whenever you can...</p>
-                      <p class="fs-7 text-secondary">
-                        <i class="bi bi-clock-fill me-1"></i> 4 Hours Ago
-                      </p>
-                    </div>
-                  </div>
-                  <!--end::Message-->
+                  </a>
+                  <div class="dropdown-divider"></div>
+                <?php endforeach; ?>
+                <a href="<?= base_url('/messages') ?>" class="dropdown-item dropdown-footer">
+                  Összes üzenet megnyitása
                 </a>
-                <div class="dropdown-divider"></div>
-                <a href="#" class="dropdown-item">
-                  <!--begin::Message-->
-                  <div class="d-flex">
-                    <div class="flex-shrink-0">
-                      <img src="<?= base_url('public/assets/adminlte/img/user.png') ?>" alt="User Avatar" class="img-size-50 rounded-circle me-3" >
-                    </div>
-                    <div class="flex-grow-1">
-                      <h3 class="dropdown-item-title">
-                        John Pierce
-                        <span class="float-end fs-7 text-secondary">
-                          <i class="bi bi-star-fill"></i>
-                        </span>
-                      </h3>
-                      <p class="fs-7">I got your message bro</p>
-                      <p class="fs-7 text-secondary">
-                        <i class="bi bi-clock-fill me-1"></i> 4 Hours Ago
-                      </p>
-                    </div>
-                  </div>
-                  <!--end::Message-->
-                </a>
-                <div class="dropdown-divider"></div>
-                <a href="#" class="dropdown-item">
-                  <!--begin::Message-->
-                  <div class="d-flex">
-                    <div class="flex-shrink-0">
-                      <img src="<?= base_url('public/assets/adminlte/img/user.png') ?>" alt="User Avatar" class="img-size-50 rounded-circle me-3" >
-                    </div>
-                    <div class="flex-grow-1">
-                      <h3 class="dropdown-item-title">
-                        Nora Silvester
-                        <span class="float-end fs-7 text-warning">
-                          <i class="bi bi-star-fill"></i>
-                        </span>
-                      </h3>
-                      <p class="fs-7">The subject goes here</p>
-                      <p class="fs-7 text-secondary">
-                        <i class="bi bi-clock-fill me-1"></i> 4 Hours Ago
-                      </p>
-                    </div>
-                  </div>
-                  <!--end::Message-->
-                </a>
-                <div class="dropdown-divider"></div>
-                <a href="#" class="dropdown-item dropdown-footer">See All Messages</a>
-              </div>
-            </li>
-            <!--end::Messages Dropdown Menu-->
+              <?php endif; ?>
+            </div>
+          </li>
+          <!--end::Messages Dropdown Menu-->
+
 
             <!--begin::Notifications Dropdown Menu-->
             <li class="nav-item dropdown">
