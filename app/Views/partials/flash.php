@@ -4,6 +4,8 @@
 // ---------------------------------------------------------
 $flashes = flash_get();
 if (!empty($flashes) && is_array($flashes)): ?>
+<div class="app-content">
+  <div class="container-fluid">
   <div class="my-3">
     <?php foreach ($flashes as $type => $msg): ?>
       <?php
@@ -29,6 +31,8 @@ if (!empty($flashes) && is_array($flashes)): ?>
       </div>
     <?php endforeach; ?>
   </div>
+  </div>
+</div>  
   <script>
   document.addEventListener('DOMContentLoaded', () => {
     setTimeout(() => {

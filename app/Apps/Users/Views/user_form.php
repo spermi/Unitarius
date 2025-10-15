@@ -71,6 +71,20 @@ $status = (int)($user['status'] ?? 0);
             </select>
           </div>
 
+            <?php
+            $isPastor = isset($user['is_pastor'])
+                ? filter_var($user['is_pastor'], FILTER_VALIDATE_BOOLEAN)
+                : false;
+            ?>
+
+            <div class="mb-3">
+              <label for="is_pastor" class="form-label">Lelkész státusz</label>
+              <select class="form-select" id="is_pastor" name="is_pastor" <?= $isPastor ? 'disabled' : '' ?>>
+                <option value="0" <?= !$isPastor ? 'selected' : '' ?>>Nem lelkész</option>
+                <option value="1" <?= $isPastor ? 'selected' : '' ?>>Lelkész</option>
+              </select>
+            </div>
+
         </div>
 
         <div class="card-footer text-end">

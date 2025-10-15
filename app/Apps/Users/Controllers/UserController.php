@@ -80,7 +80,7 @@ final class UserController
                 $stmt = DB::pdo()->prepare('
                     INSERT INTO users (name, email, password_hash, status, created_at, updated_at)
                     VALUES (:name, :email, crypt(:pass, gen_salt(\'bf\', 12)), :status, NOW(), NOW())
-                    RETURNING id
+                    RETURNING id,uuid
                 ');
                 $stmt->execute([
                     ':name'   => $name,
@@ -126,10 +126,17 @@ final class UserController
 
         if ($id > 0) {
             try {
-                $stmt = DB::pdo()->prepare('SELECT id, name, email, status FROM users WHERE id = :id');
+                // Lekérjük a lelkész státuszt is
+                $stmt = DB::pdo()->prepare('
+                    SELECT id, name, email, status, is_pastor
+                    FROM users
+                    WHERE id = :id
+                ');
                 $stmt->execute([':id' => $id]);
                 $user = $stmt->fetch(\PDO::FETCH_ASSOC) ?: null;
-            } catch (\Throwable) {}
+            } catch (\Throwable $e) {
+                error_log('[UsersController::editForm] ' . $e->getMessage());
+            }
         }
 
         return View::render('user_form', [
@@ -144,7 +151,7 @@ final class UserController
     //
     // Handles the update request and saves changes.
     // ---------------------------------------------------------
-    public function edit(array $params): void
+   public function edit(array $params): void
     {
         if (!\verify_csrf()) {
             http_response_code(419);
@@ -155,35 +162,85 @@ final class UserController
             exit;
         }
 
-        $id     = (int)($params['id'] ?? 0);
-        $name   = trim((string)($_POST['name'] ?? ''));
-        $email  = trim((string)($_POST['email'] ?? ''));
-        $status = isset($_POST['status']) ? (int)$_POST['status'] : 0;
+        $id       = (int)($params['id'] ?? 0);
+        $name     = trim((string)($_POST['name'] ?? ''));
+        $email    = trim((string)($_POST['email'] ?? ''));
+        $status   = isset($_POST['status']) ? (int)$_POST['status'] : 0;
+        $isPastor = (int)($_POST['is_pastor'] ?? 0);
 
         $ok = false;
+
         if ($id > 0 && $name !== '' && $email !== '') {
             try {
-                $stmt = DB::pdo()->prepare('
-                    UPDATE users 
-                    SET name = :name, email = :email, status = :status, updated_at = NOW()
+                $pdo = DB::pdo();
+
+                // Alapadatok frissítése
+                $stmt = $pdo->prepare('
+                    UPDATE users
+                    SET name = :name,
+                        email = :email,
+                        status = :status,
+                        updated_at = NOW()
                     WHERE id = :id
                 ');
                 $ok = $stmt->execute([
-                    ':name' => $name,
-                    ':email'=> $email,
-                    ':status'=> $status,
-                    ':id'   => $id,
+                    ':name'   => $name,
+                    ':email'  => $email,
+                    ':status' => $status,
+                    ':id'     => $id,
                 ]);
-            } catch (\Throwable) {}
+
+                // --- Mindig ellenőrizzük az aktuális DB állapotot ---
+                $check = $pdo->prepare('SELECT is_pastor FROM users WHERE id = :id');
+                $check->execute([':id' => $id]);
+                $current = $check->fetchColumn();
+                $current = filter_var($current, FILTER_VALIDATE_BOOLEAN);
+
+                // Csak az admin tudja ezt futtatni
+                if (function_exists('can') && can('users.manage')) {
+                    // Ha a user lelkész (DB szerint), garantáljuk a 'lelkesz' role meglétét
+                    if ($current === true) {
+                        $roleStmt = $pdo->prepare('SELECT id FROM roles WHERE name = :name LIMIT 1');
+                        $roleStmt->execute([':name' => 'lelkesz']);
+                        $roleId = (int)$roleStmt->fetchColumn();
+
+                        if ($roleId > 0) {
+                            $checkRole = $pdo->prepare('
+                                SELECT COUNT(*) FROM user_roles WHERE user_id = :uid AND role_id = :rid
+                            ');
+                            $checkRole->execute([':uid' => $id, ':rid' => $roleId]);
+                            $hasRole = (int)$checkRole->fetchColumn() > 0;
+
+                            if (!$hasRole) {
+                                $addRole = $pdo->prepare('
+                                    INSERT INTO user_roles (user_id, role_id)
+                                    VALUES (:uid, :rid)
+                                ');
+                                $addRole->execute([':uid' => $id, ':rid' => $roleId]);
+                                error_log("DEBUG: 'lelkesz' role auto-assigned to user id={$id}");
+                            }
+                        } else {
+                            error_log("DEBUG: 'lelkesz' role not found in roles table!");
+                        }
+                    }
+                }
+
+            } catch (\Throwable $e) {
+                error_log('[UsersController::edit] ' . $e->getMessage());
+            }
         }
 
         if (function_exists('flash_set')) {
-            flash_set($ok ? 'success' : 'error', $ok ? 'User updated successfully.' : 'Could not update user.');
+            flash_set(
+                $ok ? 'success' : 'error',
+                $ok ? 'A felhasználó módosítása sikeres.' : 'Nem sikerült módosítani a felhasználót.'
+            );
         }
 
         header('Location: ' . base_url('/users'));
         exit;
     }
+
 
     // ---------------------------------------------------------
     // POST /users/{id}/delete
