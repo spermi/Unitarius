@@ -77,7 +77,7 @@ final class Router
                 }
 
                 // Wrap callable to pass $params as single argument (array $params)
-                $handler = function () use ($callable, $params) {
+               $handler = function () use ($callable, $params) {
                     return \call_user_func($callable, $params);
                 };
 

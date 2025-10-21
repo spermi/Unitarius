@@ -18,18 +18,15 @@
 /* ------------------------------------------------------------
    Readonly input fix for AdminLTE 4 + Bootstrap 5 dark mode
    ------------------------------------------------------------ */
-
-/* General style for readonly inputs */
 input[readonly],
 textarea[readonly],
 select[readonly] {
   background-color: var(--bs-body-bg) !important;
   color: var(--bs-body-color) !important;
-  opacity: 0.8; /* slightly dimmed for visual feedback */
+  opacity: 0.8;
   cursor: not-allowed;
 }
 
-/* Slightly lighter border and text for better visibility in dark mode */
 [data-bs-theme="dark"] input[readonly],
 [data-bs-theme="dark"] textarea[readonly],
 [data-bs-theme="dark"] select[readonly] {
@@ -37,7 +34,33 @@ select[readonly] {
   color: #bbb !important;
 }
 
-/* Ensure muted labels have enough contrast in dark mode */
 [data-bs-theme="dark"] label.text-muted {
   color: #aaa !important;
+}
+
+/* =========================================================
+   Modal backdrop and content theme adaptation (global)
+   ========================================================= */
+[data-bs-theme="light"] .modal-backdrop.show {
+  background-color: rgba(255, 255, 255, 0.65) !important;
+}
+
+[data-bs-theme="dark"] .modal-backdrop.show {
+  background-color: rgba(0, 0, 0, 0.65) !important;
+}
+
+[data-bs-theme="light"] .modal-content {
+  background-color: #ffffff !important;
+  color: #212529 !important;
+}
+
+[data-bs-theme="dark"] .modal-content {
+  background-color: #2b3035 !important;
+  color: #e9ecef !important;
+  border: 1px solid #3c4043;
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.6);
+}
+
+.modal-content {
+  border-radius: 0.5rem;
 }

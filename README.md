@@ -775,3 +775,17 @@ Google Login Improvements
 * If user exists in DB and is inactive → no new user is created
 * The system now respects status and deleted flags consistently across both login flows
 avatar and name fields are updated only on first login or if empty in DB
+
+### 🧩 Adatlap Module – RBAC Permissions
+
+| Permission Key            | Description | Typical Role |
+|----------------------------|-------------|---------------|
+| **adatlap.lelkesz**        | Allows a pastor to view and edit only their own family records (ownership-based access). | `pastor` |
+| **adatlap.family.add**     | Allows creating new family records in the database (admin/secretary level access). | `admin`, `secretary` |
+| **adatlap.family.manage**  | Grants full management rights over all family records, including updates and soft deletes. | `admin` |
+
+**Note:**  
+The `families` table includes `created_by_uuid` and `updated_by_uuid` audit fields.  
+These automatically store the UUID of the user who created or last modified each record.  
+Users with only the `adatlap.lelkesz` permission can access **only** the families they created,  
+while users with `adatlap.family.add` or `adatlap.family.manage` can view or edit all family records.

@@ -25,7 +25,7 @@ final class UserController
 
         $stmt = $pdo->query(
             'SELECT id, name, email, status, avatar, last_login_at 
-             FROM users 
+             FROM users WHERE deleted = 0   
              ORDER BY id ASC 
              LIMIT 200'
         );

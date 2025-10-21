@@ -125,7 +125,7 @@ $shouldRenderParent = function (array $item): bool {
                 ?>
                   <li class="nav-item">
                     <a href="<?= htmlspecialchars($cUrl) ?>" class="nav-link <?= $cActive ?>" <?= $cIsActive ? 'aria-current="page"' : '' ?>>
-                      <i class="nav-icon <?= htmlspecialchars($cIcon) ?>"></i>
+                      <i class="nav-icon" style="opacity:0; width:1.25rem;"></i>
                       <p><?= htmlspecialchars($c['label'] ?? '') ?></p>
                     </a>
                   </li>

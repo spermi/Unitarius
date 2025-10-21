@@ -64,28 +64,61 @@ namespace {
 
     // ---------------------------------------------------------
     // Log in the given user (array from DB row)
+    // Always ensures the UUID is fetched directly from DB
     // ---------------------------------------------------------
     if (!function_exists('login_user')) {
         function login_user(array $user): void {
-            if (session_status() === \PHP_SESSION_ACTIVE) { @session_regenerate_id(true); }
+            if (session_status() === \PHP_SESSION_ACTIVE) {
+                @session_regenerate_id(true);
+            }
 
             // Invalidate RBAC permission cache on login
             unset($_SESSION['perm_cache']);
 
+            // --- Always re-fetch UUID from database for consistency ---
+            if (class_exists(\Core\DB::class)) {
+                try {
+                    $pdo = \Core\DB::pdo();
+
+                    // Try to identify the user by ID first, fallback to email if needed
+                    $stmt = null;
+                    if (!empty($user['id'])) {
+                        $stmt = $pdo->prepare('SELECT uuid FROM users WHERE id = :id LIMIT 1');
+                        $stmt->execute([':id' => (int)$user['id']]);
+                    } elseif (!empty($user['email'])) {
+                        $stmt = $pdo->prepare('SELECT uuid FROM users WHERE email = :email LIMIT 1');
+                        $stmt->execute([':email' => $user['email']]);
+                    }
+
+                    $row = $stmt ? $stmt->fetch(\PDO::FETCH_ASSOC) : null;
+                    if ($row && !empty($row['uuid'])) {
+                        $user['uuid'] = $row['uuid'];
+                    }
+                } catch (\Throwable $e) {
+                    error_log('[login_user] UUID lookup failed: ' . $e->getMessage());
+                }
+            }
+
+            // --- Store session data (now guaranteed to have uuid) ---
             $_SESSION['user'] = [
                 'id'     => (int)($user['id'] ?? 0),
+                'uuid'   => (string)($user['uuid'] ?? ''),
                 'email'  => (string)($user['email'] ?? ''),
                 'name'   => (string)($user['name'] ?? ''),
                 'status' => (int)($user['status'] ?? 1),
                 'avatar' => (string)($user['avatar'] ?? ''),
             ];
+
+            // --- Update login timestamp ---
             try {
                 if (class_exists(\Core\DB::class) && !empty($user['id'])) {
                     $pdo  = \Core\DB::pdo();
                     $stmt = $pdo->prepare('UPDATE users SET last_login_at = NOW(), updated_at = NOW() WHERE id = :id');
                     $stmt->execute([':id' => (int)$user['id']]);
                 }
-            } catch (\Throwable $e) { /* swallow */ }
+            } catch (\Throwable $e) {
+                error_log('[login_user] Update timestamp failed: ' . $e->getMessage());
+            }
         }
     }
 
@@ -332,6 +365,97 @@ namespace {
                 && hash_equals($_SESSION['csrf_token'], $token);
         }
     }
+
+    //---------------------------------------------------------
+    // Generic DB helpers (PostgreSQL, UUID-based + audit fields)
+    //---------------------------------------------------------
+
+    //---------------------------------------------------------
+    // INSERT helper
+    //---------------------------------------------------------
+    if (!function_exists('db_insert')) {
+        function db_insert(string $table, array $data): bool {
+            if (!class_exists(\Core\DB::class)) return false;
+
+            $user = current_user();
+
+            $data['created_at'] ??= date('c');
+            $data['updated_at'] ??= date('c');
+
+            $uuid = isset($user['uuid']) && trim((string)$user['uuid']) !== '' ? $user['uuid'] : null;
+
+            if (!isset($data['created_by_uuid']) && $uuid !== null) {
+                $data['created_by_uuid'] = $uuid;
+            }
+            if (!isset($data['updated_by_uuid']) && $uuid !== null) {
+                $data['updated_by_uuid'] = $uuid;
+            }
+
+            $keys = array_keys($data);
+            $cols = implode(',', $keys);
+            $vals = ':' . implode(',:', $keys);
+
+            $sql = "INSERT INTO {$table} ($cols) VALUES ($vals)";
+            $stmt = \Core\DB::pdo()->prepare($sql);
+            return $stmt->execute($data);
+        }
+    }
+
+    //---------------------------------------------------------
+    // UPDATE helper
+    //---------------------------------------------------------
+    if (!function_exists('db_update')) {
+        function db_update(string $table, string $uuid, array $data): bool {
+            if (!class_exists(\Core\DB::class)) return false;
+
+            $user = current_user();
+
+            $data['updated_at'] = date('c');
+            $userUuid = isset($user['uuid']) && trim((string)$user['uuid']) !== '' ? $user['uuid'] : null;
+
+            if (!isset($data['updated_by_uuid']) && $userUuid !== null) {
+                $data['updated_by_uuid'] = $userUuid;
+            }
+
+            $set = implode(', ', array_map(fn($k) => "$k = :$k", array_keys($data)));
+            $sql = "UPDATE {$table} SET $set WHERE uuid = :uuid";
+            $data['uuid'] = $uuid;
+
+            $stmt = \Core\DB::pdo()->prepare($sql);
+            return $stmt->execute($data);
+        }
+    }
+
+    //---------------------------------------------------------
+    // Localized date formatter for Hungarian display (YYYY.MM.DD)
+    // - Accepts ISO ("YYYY-MM-DD") or Hungarian ("YYYY.MM.DD")
+    // - Returns normalized "YYYY.MM.DD" or empty string for invalid input
+    //---------------------------------------------------------
+    if (!function_exists('format_date_hu')) {
+        function format_date_hu(?string $date): string {
+            if (empty($date)) return '';
+
+            // Trim + unify separators
+            $normalized = trim(str_replace(['/', '-'], '.', $date));
+
+            // Try to detect valid Y.m.d pattern
+            if (preg_match('/^\d{4}\.\d{2}\.\d{2}$/', $normalized)) {
+                return $normalized; // already in correct format
+            }
+
+            try {
+                $dt = new \DateTime($date);
+                return $dt->format('Y.m.d');
+            } catch (\Throwable) {
+                return '';
+            }
+        }
+    }
+
+
+
+
+
 
 }
 
