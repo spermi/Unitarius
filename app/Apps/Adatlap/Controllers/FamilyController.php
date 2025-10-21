@@ -75,7 +75,6 @@ final class FamilyController
     public function show(array $params): string
     {
         $uuid = $params['uuid'] ?? '';
-
         if ($uuid === '') {
             http_response_code(400);
             return View::render('errors/400', [
@@ -87,15 +86,27 @@ final class FamilyController
         $family = null;
         $members = [];
         $pastor = null;
+        $relations = [];
 
         try {
+            $pdo = DB::pdo();
             $family  = $this->families->findByUuid($uuid);
+            $relations = $pdo->query('SELECT code, label_hu FROM relation_type ORDER BY id ASC')
+                            ->fetchAll(\PDO::FETCH_ASSOC);
+
             if ($family) {
-                $members = $this->families->members($uuid);
-                $pastor  = $this->pastors->where('family_uuid', $uuid)->first();
+                $stmt = $pdo->prepare('
+                    SELECT fm.*, rt.label_hu AS relation_label
+                    FROM family_members fm
+                    LEFT JOIN relation_type rt ON rt.code = fm.relation_code
+                    WHERE fm.family_uuid = :uuid
+                    ORDER BY fm.created_at ASC
+                ');
+                $stmt->execute([':uuid' => $uuid]);
+                $members = $stmt->fetchAll(\PDO::FETCH_ASSOC);
             }
-        } catch (\Throwable) {
-            $family = null;
+        } catch (\Throwable $e) {
+            error_log('[FamilyController::show] ' . $e->getMessage());
         }
 
         if (!$family) {
@@ -103,16 +114,18 @@ final class FamilyController
             return View::render('errors/404', [
                 'title'   => 'Család nem található',
                 'message' => 'A kért család nem létezik vagy törölve lett.',
-            ], null);
+            ]);
         }
 
         return View::render('family_detail', [
-            'title'   => $family['family_name'] ?? 'Család',
-            'family'  => $family,
-            'members' => $members,
-            'pastor'  => $pastor,
+            'title'      => $family['family_name'] ?? 'Család',
+            'family'     => $family,
+            'members'    => $members,
+            'pastor'     => $pastor,
+            'relations'  => $relations,
         ]);
     }
+
 
     // ---------------------------------------------------------
     // POST /adatlap/family/member/save
@@ -128,41 +141,39 @@ final class FamilyController
             exit;
         }
 
-        $name       = trim($_POST['name'] ?? '');
-        $relation   = trim($_POST['relation'] ?? '');
-        $birth_date = trim($_POST['birth_date'] ?? '');
-        $death_date = trim($_POST['death_date'] ?? '');
-        $family_uuid = trim($_POST['family_uuid'] ?? '');
-        $parent_uuid = trim($_POST['parent_uuid'] ?? '');
-        $is_primary  = isset($_POST['is_primary']) ? 1 : 0;
+        $name           = trim($_POST['name'] ?? '');
+        $relation_code  = trim($_POST['relation_code'] ?? ''); // ✅ már helyes név
+        $birth_date     = trim($_POST['birth_date'] ?? '');
+        $death_date     = trim($_POST['death_date'] ?? '');
+        $family_uuid    = trim($_POST['family_uuid'] ?? '');
+        $parent_uuid    = trim($_POST['parent_uuid'] ?? '');
+        $is_primary     = isset($_POST['is_primary']) ? 1 : 0;
 
         $ok = false;
 
         if ($name !== '' && $family_uuid !== '') {
             try {
-                $pdo = DB::pdo();
+                $pdo = \Core\DB::pdo();
                 $st = $pdo->prepare('
                     INSERT INTO family_members
-                        (family_uuid, name, relation, birth_date, death_date, parent_uuid, is_primary, created_at, updated_at)
+                        (family_uuid, name, relation_code, birth_date, death_date, parent_uuid, is_primary, created_at, updated_at)
                     VALUES
-                        (:family_uuid, :name, :relation, :birth_date, :death_date, :parent_uuid, :is_primary, NOW(), NOW())
+                        (:family_uuid, :name, :relation_code, :birth_date, :death_date, :parent_uuid, :is_primary, NOW(), NOW())
                 ');
 
                 $ok = $st->execute([
-                    ':family_uuid' => $family_uuid,
-                    ':name'        => $name,
-                    ':relation'    => $relation,
-                    ':birth_date'  => $birth_date ?: null,
-                    ':death_date'  => $death_date ?: null,
-                    ':parent_uuid' => $parent_uuid ?: null,
-                    ':is_primary'  => $is_primary,
+                    ':family_uuid'   => $family_uuid,
+                    ':name'          => $name,
+                    ':relation_code' => $relation_code ?: null,
+                    ':birth_date'    => $birth_date ?: null,
+                    ':death_date'    => $death_date ?: null,
+                    ':parent_uuid'   => $parent_uuid ?: null,
+                    ':is_primary'    => $is_primary,
                 ]);
             } catch (\Throwable $e) {
-                    error_log('[FamilyController::saveMember] ' . $e->getMessage());
-                    if (function_exists('flash_set')) {
-                        flash_set('error', 'Hiba történt a mentés közben: ' . $e->getMessage());
-                    }
-                }
+                error_log('[FamilyController::saveMember] ' . $e->getMessage());
+                die('<pre><b>Mentési hiba:</b> ' . htmlspecialchars($e->getMessage()) . '</pre>');
+            }
         }
 
         if (function_exists('flash_set')) {

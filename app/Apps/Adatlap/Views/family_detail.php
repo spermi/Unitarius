@@ -58,7 +58,7 @@ function e(string $v): string { return htmlspecialchars($v, ENT_QUOTES, 'UTF-8')
               <?php foreach ($members as $m): ?>
                 <tr>
                   <td><?= e($m['name']) ?></td>
-                  <td><?= e($m['relation']) ?></td>
+                  <td><?= e($m['relation_label'] ?? '-') ?></td>
                   <td><?= e(format_date_hu($m['birth_date'] ?? '')) ?></td>
                   <td><?= e(format_date_hu($m['death_date'] ?? '')) ?></td>
                   <td><?= e($m['parent_uuid'] ?? '-') ?></td>
@@ -90,10 +90,11 @@ function e(string $v): string { return htmlspecialchars($v, ENT_QUOTES, 'UTF-8')
             </div>
             <div class="col-md-6">
               <label class="form-label">Kapcsolat</label>
-              <select name="relation" class="form-select" required>
+              <<select name="relation_code" class="form-select" required>
                 <option value="">-- válassz --</option>
-                <option value="férj">Férj</option>
-                <option value="feleség">Feleség</option>
+                <?php foreach ($relations as $r): ?>
+                  <option value="<?= e($r['code']) ?>"><?= e($r['label_hu']) ?></option>
+                <?php endforeach; ?>
               </select>
             </div>
             <div class="col-md-6">
