@@ -147,7 +147,7 @@ final class FamilyController
         $death_date     = trim($_POST['death_date'] ?? '');
         $family_uuid    = trim($_POST['family_uuid'] ?? '');
         $parent_uuid    = trim($_POST['parent_uuid'] ?? '');
-        $is_primary     = isset($_POST['is_primary']) ? 1 : 0;
+        //$is_primary     = isset($_POST['is_primary']) ? 1 : 0;
 
         $ok = false;
 
@@ -156,9 +156,10 @@ final class FamilyController
                 $pdo = \Core\DB::pdo();
                 $st = $pdo->prepare('
                     INSERT INTO family_members
-                        (family_uuid, name, relation_code, birth_date, death_date, parent_uuid, is_primary, created_at, updated_at)
+                        (family_uuid, name, relation_code, birth_date, death_date, parent_uuid, created_at, updated_at)
                     VALUES
-                        (:family_uuid, :name, :relation_code, :birth_date, :death_date, :parent_uuid, :is_primary, NOW(), NOW())
+                        (:family_uuid, :name, :relation_code, :birth_date, :death_date, :parent_uuid, NOW(), NOW())
+
                 ');
 
                 $ok = $st->execute([
@@ -168,7 +169,7 @@ final class FamilyController
                     ':birth_date'    => $birth_date ?: null,
                     ':death_date'    => $death_date ?: null,
                     ':parent_uuid'   => $parent_uuid ?: null,
-                    ':is_primary'    => $is_primary,
+                    //':is_primary'    => $is_primary,
                 ]);
             } catch (\Throwable $e) {
                 error_log('[FamilyController::saveMember] ' . $e->getMessage());

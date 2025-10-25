@@ -48,7 +48,6 @@ function e(string $v): string { return htmlspecialchars($v, ENT_QUOTES, 'UTF-8')
               <th>Született</th>
               <th>Elhunyt</th>
               <th>Szülő</th>
-              <th>Elsődleges</th>
             </tr>
           </thead>
           <tbody>
@@ -62,7 +61,6 @@ function e(string $v): string { return htmlspecialchars($v, ENT_QUOTES, 'UTF-8')
                   <td><?= e(format_date_hu($m['birth_date'] ?? '')) ?></td>
                   <td><?= e(format_date_hu($m['death_date'] ?? '')) ?></td>
                   <td><?= e($m['parent_uuid'] ?? '-') ?></td>
-                  <td><?= !empty($m['is_primary']) ? '<i class="fa-solid fa-check text-success"></i>' : '' ?></td>
                 </tr>
               <?php endforeach; ?>
             <?php endif; ?>
@@ -107,12 +105,6 @@ function e(string $v): string { return htmlspecialchars($v, ENT_QUOTES, 'UTF-8')
             </div>
             <!-- Szülő UUID egyelőre rejtve -->
             <input type="hidden" name="parent_uuid" value="">
-            <div class="col-md-6 d-flex align-items-end">
-              <div class="form-check">
-                <input type="checkbox" name="is_primary" value="1" class="form-check-input" id="isPrimary">
-                <label for="isPrimary" class="form-check-label">Elsődleges családtag</label>
-              </div>
-            </div>
           </div>
         </div>
         <div class="modal-footer">

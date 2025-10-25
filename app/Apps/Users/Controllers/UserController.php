@@ -151,7 +151,7 @@ final class UserController
     //
     // Handles the update request and saves changes.
     // ---------------------------------------------------------
-   public function edit(array $params): void
+    public function edit(array $params): void
     {
         if (!\verify_csrf()) {
             http_response_code(419);
@@ -162,11 +162,21 @@ final class UserController
             exit;
         }
 
+        // Jogosultság-ellenőrzés: csak a users.manage engedéllyel rendelkező user módosíthat
+        if (!function_exists('can') || !can('users.manage')) {
+            http_response_code(403);
+            echo View::render('errors/403', [
+                'title' => 'Hozzáférés megtagadva',
+                'message' => 'Nincs jogosultságod a felhasználók szerkesztéséhez.',
+            ]);
+            exit;
+        }
+
         $id       = (int)($params['id'] ?? 0);
         $name     = trim((string)($_POST['name'] ?? ''));
         $email    = trim((string)($_POST['email'] ?? ''));
         $status   = isset($_POST['status']) ? (int)$_POST['status'] : 0;
-        $isPastor = (int)($_POST['is_pastor'] ?? 0);
+        $isPastor = isset($_POST['is_pastor']) ? (int)$_POST['is_pastor'] : 0;
 
         $ok = false;
 
@@ -174,54 +184,78 @@ final class UserController
             try {
                 $pdo = DB::pdo();
 
+                // Lekérjük az aktuális állapotot a DB-ből
+                $check = $pdo->prepare('SELECT uuid, is_pastor FROM users WHERE id = :id');
+                $check->execute([':id' => $id]);
+                $user = $check->fetch(\PDO::FETCH_ASSOC);
+                $isPastorInDb = filter_var($user['is_pastor'] ?? false, FILTER_VALIDATE_BOOLEAN);
+
+                // Ha a user már lelkész, az is_pastor mezőt nem írjuk felül
+                // Csak speciális "users.pastor_override" engedéllyel lehetne megváltoztatni
+                if ($isPastorInDb === true && !(function_exists('can') && can('users.pastor_override'))) {
+                    $isPastor = 1;
+                }
+
                 // Alapadatok frissítése
                 $stmt = $pdo->prepare('
                     UPDATE users
                     SET name = :name,
                         email = :email,
                         status = :status,
+                        is_pastor = :is_pastor,
                         updated_at = NOW()
                     WHERE id = :id
                 ');
                 $ok = $stmt->execute([
-                    ':name'   => $name,
-                    ':email'  => $email,
-                    ':status' => $status,
-                    ':id'     => $id,
+                    ':name'      => $name,
+                    ':email'     => $email,
+                    ':status'    => $status,
+                    ':is_pastor' => $isPastor,
+                    ':id'        => $id,
                 ]);
 
-                // --- Mindig ellenőrizzük az aktuális DB állapotot ---
-                $check = $pdo->prepare('SELECT is_pastor FROM users WHERE id = :id');
-                $check->execute([':id' => $id]);
-                $current = $check->fetchColumn();
-                $current = filter_var($current, FILTER_VALIDATE_BOOLEAN);
+                // Ha mostantól lelkész (vagy már az volt)
+                $isPastorNow = ($isPastor === 1);
 
-                // Csak az admin tudja ezt futtatni
-                if (function_exists('can') && can('users.manage')) {
-                    // Ha a user lelkész (DB szerint), garantáljuk a 'lelkesz' role meglétét
-                    if ($current === true) {
-                        $roleStmt = $pdo->prepare('SELECT id FROM roles WHERE name = :name LIMIT 1');
-                        $roleStmt->execute([':name' => 'lelkesz']);
-                        $roleId = (int)$roleStmt->fetchColumn();
+                if ($isPastorNow === true) {
+                    // 1. Garantáljuk a "lelkesz" szerepet
+                    $roleStmt = $pdo->prepare('SELECT id FROM roles WHERE name = :name LIMIT 1');
+                    $roleStmt->execute([':name' => 'lelkesz']);
+                    $roleId = (int)$roleStmt->fetchColumn();
 
-                        if ($roleId > 0) {
-                            $checkRole = $pdo->prepare('
-                                SELECT COUNT(*) FROM user_roles WHERE user_id = :uid AND role_id = :rid
+                    if ($roleId > 0) {
+                        $checkRole = $pdo->prepare('
+                            SELECT COUNT(*) FROM user_roles WHERE user_id = :uid AND role_id = :rid
+                        ');
+                        $checkRole->execute([':uid' => $id, ':rid' => $roleId]);
+                        $hasRole = (int)$checkRole->fetchColumn() > 0;
+
+                        if (!$hasRole) {
+                            $addRole = $pdo->prepare('
+                                INSERT INTO user_roles (user_id, role_id)
+                                VALUES (:uid, :rid)
                             ');
-                            $checkRole->execute([':uid' => $id, ':rid' => $roleId]);
-                            $hasRole = (int)$checkRole->fetchColumn() > 0;
-
-                            if (!$hasRole) {
-                                $addRole = $pdo->prepare('
-                                    INSERT INTO user_roles (user_id, role_id)
-                                    VALUES (:uid, :rid)
-                                ');
-                                $addRole->execute([':uid' => $id, ':rid' => $roleId]);
-                                error_log("DEBUG: 'lelkesz' role auto-assigned to user id={$id}");
-                            }
-                        } else {
-                            error_log("DEBUG: 'lelkesz' role not found in roles table!");
+                            $addRole->execute([':uid' => $id, ':rid' => $roleId]);
+                            error_log("DEBUG: 'lelkesz' role auto-assigned to user id={$id}");
                         }
+                    }
+
+                    // 2. Ellenőrizzük, van-e pastors rekord ehhez a userhez
+                    $pastorCheck = $pdo->prepare('SELECT COUNT(*) FROM pastors WHERE user_uuid = :uuid');
+                    $pastorCheck->execute([':uuid' => $user['uuid']]);
+                    $hasPastor = (int)$pastorCheck->fetchColumn() > 0;
+
+                    // 3. Ha nincs, létrehozzuk (UUID-t a Postgres kezeli)
+                    if (!$hasPastor) {
+                        $insert = $pdo->prepare('
+                            INSERT INTO pastors (user_uuid, full_name, created_at, updated_at)
+                            VALUES (:user_uuid, :full_name, NOW(), NOW())
+                        ');
+                        $insert->execute([
+                            ':user_uuid' => $user['uuid'],
+                            ':full_name' => $name,
+                        ]);
+                        error_log("DEBUG: Pastor record auto-created for user id={$id}");
                     }
                 }
 
@@ -240,7 +274,6 @@ final class UserController
         header('Location: ' . base_url('/users'));
         exit;
     }
-
 
     // ---------------------------------------------------------
     // POST /users/{id}/delete

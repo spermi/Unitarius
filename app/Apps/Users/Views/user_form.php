@@ -79,11 +79,22 @@ $status = (int)($user['status'] ?? 0);
 
             <div class="mb-3">
               <label for="is_pastor" class="form-label">Lelkész státusz</label>
-              <select class="form-select" id="is_pastor" name="is_pastor" <?= $isPastor ? 'disabled' : '' ?>>
-                <option value="0" <?= !$isPastor ? 'selected' : '' ?>>Nem lelkész</option>
-                <option value="1" <?= $isPastor ? 'selected' : '' ?>>Lelkész</option>
-              </select>
-            </div>
+
+              <?php if (!empty($user['is_pastor'])): ?>
+                  <!-- A user már lelkész: a checkbox le van tiltva, de a hidden input elküldi az értéket -->
+                  <input type="hidden" name="is_pastor" value="1">
+                  <div class="form-check">
+                      <input type="checkbox" id="is_pastor" class="form-check-input" checked disabled>
+                      <label for="is_pastor" class="form-check-label text-muted">A felhasználó már lelkész (nem módosítható)</label>
+                  </div>
+              <?php else: ?>
+                  <!-- Még nem lelkész: normálul szerkeszthető -->
+                  <div class="form-check">
+                      <input type="checkbox" id="is_pastor" name="is_pastor" value="1" class="form-check-input">
+                      <label for="is_pastor" class="form-check-label">Lelkészi státusz beállítása</label>
+                  </div>
+              <?php endif; ?>
+          </div>
 
         </div>
 
