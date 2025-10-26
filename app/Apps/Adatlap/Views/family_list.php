@@ -31,32 +31,40 @@ function e(string $v): string { return htmlspecialchars($v, ENT_QUOTES, 'UTF-8')
 
       <div class="card-body table-responsive">
         <table class="table table-hover align-middle">
-          <thead class="table-light">
-            <tr>
-              <th class="text-center" style="width:50px;">#</th>
-              <th>Családnév</th>
-              <th>Létrehozva</th>
-              <th class="text-end" style="width:120px;"></th>
+       <thead class="table-light">
+        <tr>
+          <th class="text-center" style="width:50px;">#</th>
+          <th>Családnév</th>
+          <th>Létrehozva</th>
+          <th class="text-center" style="width:100px;">Aktuális</th> <!-- NEW -->
+          <th class="text-end" style="width:120px;"></th>
+        </tr>
+      </thead>
+      <tbody>
+        <?php if (empty($families)): ?>
+          <tr><td colspan="5" class="text-center text-muted">Nincsenek családok az adatbázisban.</td></tr>
+        <?php else: ?>
+          <?php foreach ($families as $i => $f): ?>
+            <tr<?= !empty($f['is_current']) ? ' class="table-primary-subtle"' : '' ?>>
+              <td class="text-center"><?= $i + 1 ?></td>
+              <td><?= e($f['family_name'] ?? '') ?></td>
+              <td><?= e($f['created_at'] ?? '') ?></td>
+              <td class="text-center">
+                <?php if (!empty($f['is_current'])): ?>
+                  <span class="badge bg-primary">Igen</span>
+                <?php else: ?>
+                  <span class="text-muted">—</span>
+                <?php endif; ?>
+              </td>
+              <td class="text-end">
+                <a href="<?= base_url('/adatlap/family/' . $f['uuid']) ?>" class="btn btn-sm btn-primary">
+                  <i class="fa-solid fa-users me-1"></i> Megnyitás
+                </a>
+              </td>
             </tr>
-          </thead>
-          <tbody>
-            <?php if (empty($families)): ?>
-              <tr><td colspan="4" class="text-center text-muted">Nincsenek családok az adatbázisban.</td></tr>
-            <?php else: ?>
-              <?php foreach ($families as $i => $f): ?>
-                <tr>
-                  <td class="text-center"><?= $i + 1 ?></td>
-                  <td><?= e($f['family_name'] ?? '') ?></td>
-                  <td><?= e($f['created_at'] ?? '') ?></td>
-                  <td class="text-end">
-                    <a href="<?= base_url('/adatlap/family/' . $f['uuid']) ?>" class="btn btn-sm btn-primary">
-                      <i class="fa-solid fa-users me-1"></i> Megnyitás
-                    </a>
-                  </td>
-                </tr>
-              <?php endforeach; ?>
-            <?php endif; ?>
-          </tbody>
+          <?php endforeach; ?>
+        <?php endif; ?>
+      </tbody>
         </table>
       </div>
     </div>
