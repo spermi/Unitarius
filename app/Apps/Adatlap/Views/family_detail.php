@@ -88,7 +88,7 @@ function e(string $v): string { return htmlspecialchars($v, ENT_QUOTES, 'UTF-8')
             </div>
             <div class="col-md-6">
               <label class="form-label">Kapcsolat</label>
-              <<select name="relation_code" class="form-select" required>
+              <select name="relation_code" class="form-select" required>
                 <option value="">-- válassz --</option>
                 <?php foreach ($relations as $r): ?>
                   <option value="<?= e($r['code']) ?>"><?= e($r['label_hu']) ?></option>

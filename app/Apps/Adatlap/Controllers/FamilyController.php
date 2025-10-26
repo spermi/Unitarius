@@ -131,62 +131,94 @@ final class FamilyController
     // ---------------------------------------------------------
     // POST /adatlap/family/member/save
     // ---------------------------------------------------------
-    public function saveMember(): void
-    {
-        if (!\verify_csrf()) {
-            http_response_code(419);
-            echo \Core\View::render('errors/419', [
-                'title' => 'Page Expired',
-                'message' => 'Invalid or missing CSRF token.',
-            ]);
+public function saveMember(): void
+{
+    require_can('adatlap.lelkesz');
+
+    if (!verify_csrf()) {
+        flash_set('error', 'Érvénytelen vagy hiányzó biztonsági token.');
+        header('Location: ' . base_url('/adatlap/family'));
+        exit;
+    }
+
+    $currentUser = \current_user();
+    $userUuid    = $currentUser['uuid'] ?? null;
+
+    $familyUuid   = trim($_POST['family_uuid'] ?? '');
+    $relationCode = trim($_POST['relation_code'] ?? '');
+    $name         = trim($_POST['name'] ?? '');
+    $birthDate    = trim($_POST['birth_date'] ?? '');
+    $deathDate    = trim($_POST['death_date'] ?? '');
+
+    $redirectUrl = base_url('/adatlap/family/' . $familyUuid);
+
+    if ($familyUuid === '' || $relationCode === '') {
+        flash_set('error', 'Hiányzó kötelező mezők (család vagy kapcsolat típus).');
+        header('Location: ' . $redirectUrl);
+        exit;
+    }
+
+    try {
+        $pdo = DB::pdo();
+        $pdo->beginTransaction();
+
+        // --- ellenőrzés: a család a bejelentkezett lelkészhez tartozik-e ---
+        $stmt = $pdo->prepare("
+            SELECT COUNT(*) FROM pastor_relationships
+            WHERE pastor_uuid = (
+                SELECT uuid FROM pastors WHERE user_uuid = :user_uuid
+            )
+            AND family_uuid = :family_uuid
+        ");
+        $stmt->execute([
+            ':user_uuid'   => $userUuid,
+            ':family_uuid' => $familyUuid,
+        ]);
+        if ((int)$stmt->fetchColumn() === 0) {
+            $pdo->rollBack();
+            flash_set('error', 'Nem adhatsz hozzá tagot ehhez a családhoz.');
+            header('Location: ' . base_url('/adatlap/family'));
             exit;
         }
 
-        $name           = trim($_POST['name'] ?? '');
-        $relation_code  = trim($_POST['relation_code'] ?? ''); // ✅ már helyes név
-        $birth_date     = trim($_POST['birth_date'] ?? '');
-        $death_date     = trim($_POST['death_date'] ?? '');
-        $family_uuid    = trim($_POST['family_uuid'] ?? '');
-        $parent_uuid    = trim($_POST['parent_uuid'] ?? '');
-        //$is_primary     = isset($_POST['is_primary']) ? 1 : 0;
-
-        $ok = false;
-
-        if ($name !== '' && $family_uuid !== '') {
-            try {
-                $pdo = \Core\DB::pdo();
-                $st = $pdo->prepare('
-                    INSERT INTO family_members
-                        (family_uuid, name, relation_code, birth_date, death_date, parent_uuid, created_at, updated_at)
-                    VALUES
-                        (:family_uuid, :name, :relation_code, :birth_date, :death_date, :parent_uuid, NOW(), NOW())
-
-                ');
-
-                $ok = $st->execute([
-                    ':family_uuid'   => $family_uuid,
-                    ':name'          => $name,
-                    ':relation_code' => $relation_code ?: null,
-                    ':birth_date'    => $birth_date ?: null,
-                    ':death_date'    => $death_date ?: null,
-                    ':parent_uuid'   => $parent_uuid ?: null,
-                    //':is_primary'    => $is_primary,
-                ]);
-            } catch (\Throwable $e) {
-                error_log('[FamilyController::saveMember] ' . $e->getMessage());
-                die('<pre><b>Mentési hiba:</b> ' . htmlspecialchars($e->getMessage()) . '</pre>');
-            }
+        // --- érvényes kapcsolat típus? ---
+        $stmt = $pdo->prepare("SELECT COUNT(*) FROM relation_type WHERE code = :code");
+        $stmt->execute([':code' => $relationCode]);
+        if ((int)$stmt->fetchColumn() === 0) {
+            $pdo->rollBack();
+            flash_set('error', 'Érvénytelen kapcsolat típus.');
+            header('Location: ' . $redirectUrl);
+            exit;
         }
 
-        if (function_exists('flash_set')) {
-            flash_set($ok ? 'success' : 'error',
-                $ok ? 'Családtag sikeresen hozzáadva.' : 'Nem sikerült menteni a családtagot.'
-            );
-        }
+        // --- beszúrás kizárólag a létező mezőkkel ---
+        $stmt = $pdo->prepare("
+            INSERT INTO family_members 
+                (uuid, family_uuid, name, relation_code, birth_date, death_date, created_at, updated_at)
+            VALUES 
+                (gen_random_uuid(), :family_uuid, :name, :relation_code, :birth_date, :death_date, NOW(), NOW())
+        ");
+        $stmt->bindValue(':family_uuid', $familyUuid);
+        $stmt->bindValue(':name', $name ?: null);
+        $stmt->bindValue(':relation_code', $relationCode);
+        $stmt->bindValue(':birth_date', $birthDate ?: null);
+        $stmt->bindValue(':death_date', $deathDate ?: null);
+        $stmt->execute();
 
-        header('Location: ' . base_url('/adatlap/family/' . $family_uuid));
-        exit;
+        $pdo->commit();
+        flash_set('success', 'Családtag sikeresen hozzáadva.');
+    } catch (\Throwable $e) {
+        if (isset($pdo) && $pdo->inTransaction()) {
+            $pdo->rollBack();
+        }
+        flash_set('error', 'Hiba történt a családtag mentése közben: ' . $e->getMessage());
     }
+
+    header('Location: ' . $redirectUrl);
+    exit;
+}
+
+
 
     // ---------------------------------------------------------
     // GET /adatlap/family/tree/{uuid}

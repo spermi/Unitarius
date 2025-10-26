@@ -789,3 +789,76 @@ The `families` table includes `created_by_uuid` and `updated_by_uuid` audit fiel
 These automatically store the UUID of the user who created or last modified each record.  
 Users with only the `adatlap.lelkesz` permission can access **only** the families they created,  
 while users with `adatlap.family.add` or `adatlap.family.manage` can view or edit all family records.
+
+
+
+## Jogosultságok (RBAC)
+
+| Permission key            | Leírás                                       | Ki |
+|---------------------------|----------------------------------------------|----|
+| `adatlap.lelkesz`         | Lelkészi nézetek és saját tartomány CRUD     | pastor |
+| `adatlap.family.create`   | Lelkész saját család létrehozása             | pastor |
+| *(későbbre:)* `adatlap.family.add` | Admin/titkár bármely család létrehozása | admin/secretary |
+
+---
+
+## Útvonalak (routes)
+
+- `GET  /adatlap/family` → lista (csak saját rekordok a lelkésznek)  
+- `GET  /adatlap/family/{uuid}` → részletek (család + tagok)  
+- `GET  /adatlap/family/create` → űrlap (perm: `adatlap.family.create`)  
+- `POST /adatlap/family/store` → mentés (perm: `adatlap.family.create`)  
+- `POST /adatlap/family/member/save` → családtag mentés (perm: `adatlap.lelkesz`)
+
+**Megjegyzés:** Az admin/titkár ágra (`adatlap.family.add`) külön logika lesz később, most *nincs használatban*.
+
+---
+
+## Adatmodell (DBML kivonat)
+
+**families**  
+`(uuid, family_name, created_by_uuid, updated_by_uuid, created_at, updated_at)`
+
+**pastors**  
+`(uuid, user_uuid, ...)`
+
+**pastor_relationships**  
+`(uuid, pastor_uuid -> pastors.uuid, family_uuid -> families.uuid, is_current bool)`
+
+**relation_type**  
+`(code PK, label, ...)`
+
+**family_members**  
+`(uuid, family_uuid, name, relation_code -> relation_type.code, birth_date, death_date, created_at, updated_at)`
+
+---
+
+## Implementációs jegyzetek
+
+### FamilyController::store()
+- Perm: `adatlap.family.create`
+- CSRF ellenőrzés kötelező
+- Bejelentkezett user: `\current_user()` → `$userUuid`
+- `pastor_uuid` meghatározása: `SELECT uuid FROM pastors WHERE user_uuid=:user_uuid`
+- INSERT `families` → **csak létező mezők** (DBML szerint)
+- `pastor_relationships` beszúrás:  
+  - ha **van** már `is_current = TRUE` rekord → új kapcsolat `is_current = FALSE`  
+  - ha **nincs** → `TRUE`  
+  - bind: `PDO::PARAM_BOOL`
+- Redirect: `/adatlap/family`
+  
+**Pitfall:** a `pastor_relationships.pastor_uuid` **nem** a user UUID, hanem a **pastors.uuid**!
+
+### FamilyController::saveMember()
+- Perm: `adatlap.lelkesz`
+- Kötelező mezők: `family_uuid`, `relation_code`  
+  *(a `name`, `birth_date`, `death_date` opcionális – üresen `NULL`)*
+- Ownership-check: csak saját családba lehet tagot rögzíteni  
+  (`pastor_relationships` + `pastors.user_uuid = current_user.uuid`)
+- `relation_code` validáció: léteznie kell a `relation_type` táblában
+- INSERT `family_members` → kizárólag:  
+  `(uuid, family_uuid, name, relation_code, birth_date, death_date, created_at, updated_at)`
+- Redirect: `/adatlap/family/{family_uuid}`
+
+---
+
