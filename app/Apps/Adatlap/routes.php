@@ -58,13 +58,13 @@ return static function (Router $router): void {
     // --- ÚJ CSALÁD HOZZÁADÁSA (FamilyController)
     // ---------------------------------------------------------
     $router->get('/adatlap/family/create', [
-        new RequirePermission('adatlap.family.add'),
-        [FamilyController::class, 'create']  // Család hozzáadásához szükséges route
+        new RequirePermission('adatlap.family.create'),
+        [FamilyController::class, 'create']  // Család form megjelenítése
     ]);
 
     $router->post('/adatlap/family/store', [
-        new RequirePermission('adatlap.family.add'),
-        [FamilyController::class, 'store']
+        new RequirePermission('adatlap.family.create'),
+        [FamilyController::class, 'store']  //Család adatainak mentése
     ]);
 
 };
