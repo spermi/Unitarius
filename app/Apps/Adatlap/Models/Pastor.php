@@ -48,9 +48,13 @@ class Pastor
     /** Get all pastors with linked family names */
     public function allWithFamilies(): array
     {
-        $sql = "SELECT p.*, f.family_name
+        $sql = "SELECT p.*,
+                        f.family_name
                 FROM {$this->table} p
-                LEFT JOIN families f ON f.uuid = p.family_uuid
+                LEFT JOIN pastor_relationships pr
+                        ON pr.pastor_uuid = p.uuid AND pr.is_current = TRUE
+                LEFT JOIN families f
+                        ON f.uuid = pr.family_uuid
                 ORDER BY p.full_name";
         $stmt = $this->pdo->query($sql);
         return $stmt->fetchAll();

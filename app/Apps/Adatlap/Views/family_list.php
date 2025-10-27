@@ -31,7 +31,7 @@ function e(string $v): string { return htmlspecialchars($v, ENT_QUOTES, 'UTF-8')
 
       <div class="card-body table-responsive">
         <table class="table table-hover align-middle">
-       <thead class="table-light">
+      <thead class="table-light">
         <tr>
           <th class="text-center" style="width:50px;">#</th>
           <th>Családnév</th>

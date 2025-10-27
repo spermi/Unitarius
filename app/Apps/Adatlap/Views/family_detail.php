@@ -3,6 +3,15 @@
 /** @var array $members */
 /** @var array|null $pastor */
 function e(string $v): string { return htmlspecialchars($v, ENT_QUOTES, 'UTF-8'); }
+
+// Detect existing husband/wife in this family (based on relation_code)
+$hasHusband = false;
+$hasWife    = false;
+foreach ($members as $m) {
+    $code = strtolower((string)($m['relation_code'] ?? ''));
+    if (in_array($code, ['ferj','husband'], true))   $hasHusband = true;
+    if (in_array($code, ['feleseg','wife'], true))    $hasWife = true;
+}
 ?>
 
 <!--begin::App Content Header-->
@@ -46,8 +55,6 @@ function e(string $v): string { return htmlspecialchars($v, ENT_QUOTES, 'UTF-8')
               <th>Név</th>
               <th>Kapcsolat</th>
               <th>Született</th>
-              <th>Elhunyt</th>
-              <th>Szülő</th>
             </tr>
           </thead>
           <tbody>
@@ -59,8 +66,6 @@ function e(string $v): string { return htmlspecialchars($v, ENT_QUOTES, 'UTF-8')
                   <td><?= e($m['name']) ?></td>
                   <td><?= e($m['relation_label'] ?? '-') ?></td>
                   <td><?= e(format_date_hu($m['birth_date'] ?? '')) ?></td>
-                  <td><?= e(format_date_hu($m['death_date'] ?? '')) ?></td>
-                  <td><?= e($m['parent_uuid'] ?? '-') ?></td>
                 </tr>
               <?php endforeach; ?>
             <?php endif; ?>
@@ -103,8 +108,21 @@ function e(string $v): string { return htmlspecialchars($v, ENT_QUOTES, 'UTF-8')
               <label class="form-label">Elhalálozás dátuma</label>
               <input type="date" name="death_date" class="form-control">
             </div>
-            <!-- Szülő UUID egyelőre rejtve -->
-            <input type="hidden" name="parent_uuid" value="">
+            <div class="col-md-6">
+            <label class="form-label d-block">Nem</label>
+            <div class="form-check form-check-inline">
+              <input class="form-check-input" type="radio" name="gender" id="genderMale" value="male">
+              <label class="form-check-label" for="genderMale">Férfi</label>
+            </div>
+            <div class="form-check form-check-inline">
+              <input class="form-check-input" type="radio" name="gender" id="genderFemale" value="female">
+              <label class="form-check-label" for="genderFemale">Nő</label>
+            </div>
+            <div class="form-check form-check-inline">
+              <input class="form-check-input" type="radio" name="gender" id="genderNone" value="" checked>
+              <label class="form-check-label" for="genderNone">Nincs megadva</label>
+            </div>
+          </div>
           </div>
         </div>
         <div class="modal-footer">
@@ -131,59 +149,96 @@ function e(string $v): string { return htmlspecialchars($v, ENT_QUOTES, 'UTF-8')
 </div>
 <!--end::App Content-->
 
-<!-- D3.js CDN -->
-<script src="https://d3js.org/d3.v7.min.js"></script>
 <script>
-function renderTree(data) {
-  const treeData = data.root_member;
-  const width = document.getElementById("familyTree").clientWidth;
-  const dx = 20, dy = width / 6;
-  const tree = d3.tree().nodeSize([dx, dy]);
-  const diagonal = d3.linkHorizontal().x(d => d.y).y(d => d.x);
-  const root = d3.hierarchy(treeData);
-  root.x0 = dy / 2; root.y0 = 0; tree(root);
+document.addEventListener('DOMContentLoaded', function () {
+  // Relation code sets – igazítsd a saját kódjaidhoz, ha eltérnek
+  const SPOUSE_MALE   = ['ferj','husband'];
+  const SPOUSE_FEMALE = ['feleseg','wife'];
+  const CHILDREN      = ['gyermek','child'];
 
-  const svg = d3.select("#familyTree").append("svg")
-    .attr("viewBox", [-40, -20, width, 500])
-    .style("font", "12px sans-serif");
+  const hasHusband = <?= $hasHusband ? 'true' : 'false' ?>;
+  const hasWife    = <?= $hasWife    ? 'true' : 'false'  ?>;
 
-  const g = svg.append("g").attr("transform", `translate(80,${dx})`);
+  const relSelect    = document.querySelector('select[name="relation_code"]');
+  const genderMale   = document.getElementById('genderMale');
+  const genderFemale = document.getElementById('genderFemale');
+  const genderNone   = document.getElementById('genderNone');
 
-  g.append("g").selectAll("path").data(root.links())
-    .join("path").attr("fill", "none").attr("stroke", "#555")
-    .attr("stroke-opacity", 0.4).attr("stroke-width", 1.5).attr("d", diagonal);
+  if (!relSelect) return;
 
-  const node = g.append("g").selectAll("g").data(root.descendants())
-    .join("g").attr("transform", d => `translate(${d.y},${d.x})`);
+  function setOptionVisibility(selectEl, value, visible) {
+    const opt = Array.from(selectEl.options).find(o => (o.value || '').toLowerCase() === value);
+    if (!opt) return;
+    opt.hidden = !visible;
+    opt.disabled = !visible;
+  }
 
-  node.append("circle")
-    .attr("r", 5)
-    .attr("fill", d => d.data.is_primary ? "#0d6efd" : "#999")
-    .attr("stroke", "#333").attr("stroke-width", 0.5)
-    .append("title")
-    .text(d => `${d.data.name}\n${d.data.relation || ''}`);
-
-  node.append("text")
-    .attr("dy", "-0.5em")
-    .attr("x", d => d.children ? -8 : 8)
-    .attr("text-anchor", d => d.children ? "end" : "start")
-    .attr("font-weight", d => d.data.is_primary ? "700" : "400")
-    .text(d => d.data.name)
-    .clone(true).lower().attr("stroke", "white");
-
-  node.append("text")
-    .attr("dy", "1em")
-    .attr("x", d => d.children ? -8 : 8)
-    .attr("text-anchor", d => d.children ? "end" : "start")
-    .attr("font-size", "10px")
-    .attr("fill", "#555")
-    .text(d => {
-      let info = d.data.relation || '';
-      if (d.data.birth_date) info += (info ? ' • ' : '') + d.data.birth_date;
-      return info;
+  function firstVisibleChildCode() {
+    const opt = Array.from(relSelect.options).find(o => {
+      const v = (o.value || '').toLowerCase();
+      return v && CHILDREN.includes(v) && !o.hidden && !o.disabled;
     });
-}
+    return opt ? opt.value : '';
+  }
+
+  function ensureChildSelectedIfNeeded() {
+    if (hasHusband && hasWife) {
+      const childVal = firstVisibleChildCode();
+      if (childVal) {
+        relSelect.value = childVal;
+        // Gyereknél nem állítunk nemet automatikusan
+        if (genderNone) genderNone.checked = true;
+        relSelect.dispatchEvent(new Event('change', {bubbles:true}));
+      }
+    }
+  }
+
+  function applyFiltering() {
+    const allCodes = Array.from(relSelect.options).map(o => (o.value || '').toLowerCase());
+
+    // enable all (placeholder kivételével)
+    allCodes.forEach(c => { if (c) setOptionVisibility(relSelect, c, true); });
+
+    // Ha már van férj ÉS feleség → csak gyermek marad
+    if (hasHusband && hasWife) {
+      allCodes.forEach(c => { if (!CHILDREN.includes(c)) setOptionVisibility(relSelect, c, false); });
+      ensureChildSelectedIfNeeded();
+      return;
+    }
+
+    // Egyik házastárs már létezik → a megfelelő opciókat rejtsük
+    if (hasHusband) { SPOUSE_MALE.forEach(c => setOptionVisibility(relSelect, c, false)); }
+    if (hasWife)    { SPOUSE_FEMALE.forEach(c => setOptionVisibility(relSelect, c, false)); }
+  }
+
+  function applyGenderAutoSelect(code) {
+    const c = (code || '').toLowerCase();
+    if (SPOUSE_MALE.includes(c)) {
+      if (genderMale)   genderMale.checked = true;
+    } else if (SPOUSE_FEMALE.includes(c)) {
+      if (genderFemale) genderFemale.checked = true;
+    } else {
+      // Gyermek/egyéb: hagyjuk, vagy vissza állíthatjuk "Nincs megadva"-ra
+      if (genderNone) genderNone.checked = true;
+    }
+  }
+
+  applyFiltering();
+
+  relSelect.addEventListener('change', function () {
+    applyGenderAutoSelect(this.value);
+  });
+
+  // Ha a modál nyílik meg, és már van férj+feleség, akkor is válasszon automatikusan gyermeket
+  const modal = document.getElementById('addMemberModal');
+  if (modal) {
+    modal.addEventListener('shown.bs.modal', function () {
+      if (hasHusband && hasWife) ensureChildSelectedIfNeeded();
+    });
+  }
+});
 </script>
+
 
 <!-- Magyar dátumformátum megjelenítés (YYYY.MM.DD) -->
 <script>
