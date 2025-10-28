@@ -84,6 +84,17 @@ function e(string $v): string { return htmlspecialchars($v, ENT_QUOTES, 'UTF-8')
                 <label class="form-label">Családnév</label>
                 <input type="text" name="family_name" class="form-control" required>
               </div>
+              <!-- ADD: Marriage fields -->
+              <div class="mb-3">
+                <label class="form-label">Házasságkötés dátuma</label>
+                <input type="date" name="marriage_date" class="form-control" required>
+                <!-- If you DON'T want 'required', remove it -->
+              </div>
+              <div class="mb-3">
+                <label class="form-label">Házasság helye (opcionális)</label>
+                <input type="text" name="marriage_place" class="form-control" maxlength="150" placeholder="Település / templom">
+              </div>
+
             </div>
             <div class="modal-footer">
               <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Mégse</button>
@@ -99,3 +110,42 @@ function e(string $v): string { return htmlspecialchars($v, ENT_QUOTES, 'UTF-8')
 <!--end::App Content-->
 
 
+<!-- Magyar dátumformátum megjelenítés (YYYY.MM.DD) -->
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const dateInputs = document.querySelectorAll('input[type="date"]');
+
+  dateInputs.forEach(input => {
+    input.placeholder = 'ÉÉÉÉ.HH.NN';
+
+    // Initial display sync
+    if (input.value) updateDisplay(input);
+
+    // Sync on native picker/value change
+    input.addEventListener('change', e => {
+      updateDisplay(e.target);
+    });
+
+    // Allow manual HU format input: YYYY.MM.DD -> normalize to ISO
+    input.addEventListener('blur', e => {
+      const val = (e.target.value || '').trim();
+      if (/^\d{4}\.\d{2}\.\d{2}$/.test(val)) {
+        const [y, m, d] = val.split('.');
+        e.target.value = `${y}-${m}-${d}`; // ISO for backend
+        updateDisplay(e.target);
+      }
+    });
+  });
+
+  function updateDisplay(input) {
+    const val = input.value || '';
+    // FIX: correct ISO regex (was \d2 without braces)
+    if (/^\d{4}-\d{2}-\d{2}$/.test(val)) {
+      const [y, m, d] = val.split('-');
+      input.setAttribute('data-display', `${y}.${m}.${d}`); // HU display via CSS if used
+    } else {
+      input.removeAttribute('data-display');
+    }
+  }
+});
+</script>

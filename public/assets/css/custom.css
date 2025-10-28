@@ -64,3 +64,28 @@ select[readonly] {
 .modal-content {
   border-radius: 0.5rem;
 }
+
+/* =========================================================
+       Date input: Hungarian display overlay (YYYY.MM.DD) 
+========================================================= */
+input[type="date"] {
+  position: relative;
+  color: transparent; /* hide native ISO text */
+}
+input[type="date"]::after {
+  content: attr(data-display);
+  position: absolute;
+  left: 10px;
+  top: 7px;
+  color: var(--bs-body-color);
+  pointer-events: none;
+  font-size: 0.95rem;
+}
+input[type="date"]:focus {
+  color: var(--bs-body-color);
+}
+
+/* --- Visual tweak: transparent list items inside cards --- */
+.card .list-group-item {
+  background: transparent;
+}

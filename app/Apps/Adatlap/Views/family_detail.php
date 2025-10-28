@@ -7,10 +7,23 @@ function e(string $v): string { return htmlspecialchars($v, ENT_QUOTES, 'UTF-8')
 // Detect existing husband/wife in this family (based on relation_code)
 $hasHusband = false;
 $hasWife    = false;
+
+// Split members visually: parents left/right + children below
+$husbandMembers  = [];
+$wifeMembers     = [];
+$childrenMembers = [];
+
 foreach ($members as $m) {
     $code = strtolower((string)($m['relation_code'] ?? ''));
-    if (in_array($code, ['ferj','husband'], true))   $hasHusband = true;
-    if (in_array($code, ['feleseg','wife'], true))    $hasWife = true;
+    if (in_array($code, ['ferj','husband'], true)) {
+        $hasHusband = true;
+        $husbandMembers[] = $m;
+    } elseif (in_array($code, ['feleseg','wife'], true)) {
+        $hasWife = true;
+        $wifeMembers[] = $m;
+    } elseif (in_array($code, ['gyermek','child','children'], true)) {
+        $childrenMembers[] = $m;
+    }
 }
 ?>
 
@@ -34,106 +47,181 @@ foreach ($members as $m) {
 <div class="app-content">
   <div class="container-fluid">
 
-    <!-- Pastor info -->
-    <div class="alert alert-light border d-flex align-items-center mb-4">
-      <i class="fa-solid fa-church me-2 text-primary"></i>
-      <div>
-        <strong>Lelkipásztor:</strong>
-        <?= $pastor ? e($pastor['full_name']) : '<em>nincs kapcsolt pásztor</em>' ?>
-      </div>
-    </div>
-
-    <!-- Members table -->
+    <!-- NEW: Visual split – Parents (left/right) + Children (below) -->
     <div class="card mb-4 border-primary-subtle">
       <div class="card-header">
-        <h5 class="card-title mb-0"><i class="fa-solid fa-users me-1"></i> Családtagok</h5>
+        <h5 class="card-title mb-0"><i class="fa-solid fa-sitemap me-1"></i> Család elrendezés</h5>
       </div>
-      <div class="card-body table-responsive">
-        <table class="table table-hover align-middle">
-          <thead class="table-light">
-            <tr>
-              <th>Név</th>
-              <th>Kapcsolat</th>
-              <th>Született</th>
-            </tr>
-          </thead>
-          <tbody>
-            <?php if (empty($members)): ?>
-              <tr><td colspan="6" class="text-center text-muted">Nincsenek családtagok.</td></tr>
-            <?php else: ?>
-              <?php foreach ($members as $m): ?>
-                <tr>
-                  <td><?= e($m['name']) ?></td>
-                  <td><?= e($m['relation_label'] ?? '-') ?></td>
-                  <td><?= e(format_date_hu($m['birth_date'] ?? '')) ?></td>
-                </tr>
-              <?php endforeach; ?>
-            <?php endif; ?>
-          </tbody>
-        </table>
+      <div class="card-body">
+        <div class="row g-3">
+        
+        <!-- Left parent (Husband) -->
+          <div class="col-12 col-lg-6">
+            <div class="border rounded p-3 h-100">
+              <div class="d-flex align-items-center mb-2">
+                <i class="fa-solid fa-person me-2 text-primary"></i>
+                <strong>
+                  <?php if (!empty($husbandMembers)): ?>
+                    <?= e($husbandMembers[0]['name'] ?? '-') ?> — Férj
+                  <?php else: ?>
+                    Szülő (Férj)
+                  <?php endif; ?>
+                </strong>
+              </div>
+              <?php if (!empty($husbandMembers)): ?>
+                <ul class="list-group list-group-flush">
+                  <?php foreach ($husbandMembers as $h): ?>
+                    <li class="list-group-item px-0">
+                      <div class="fw-semibold"><?= e($h['name'] ?? '-') ?></div>  
+                      <div class="text-muted small">
+                        <?= e($h['relation_label'] ?? 'Férj') ?>
+                        <?php if (!empty($h['birth_date'])): ?>
+                          • <?= e(format_date_hu($h['birth_date'])) ?>
+                        <?php endif; ?>
+                      </div>
+                    </li>
+                  <?php endforeach; ?>
+                </ul>
+              <?php else: ?>
+                <div class="text-muted fst-italic">Nincs megadva.</div>
+              <?php endif; ?>
+            </div>
+          </div>
+
+          <!-- Right parent (Wife) -->
+          <div class="col-12 col-lg-6">
+            <div class="border rounded p-3 h-100">
+              <div class="d-flex align-items-center mb-2">
+                <i class="fa-solid fa-person-dress me-2 text-danger"></i>
+                <strong>
+                  <?php if (!empty($wifeMembers)): ?>
+                    <?= e($wifeMembers[0]['name'] ?? '-') ?> — Feleség
+                  <?php else: ?>
+                    Szülő (Feleség)
+                  <?php endif; ?>
+                </strong>
+              </div>
+              <?php if (!empty($wifeMembers)): ?>
+                <ul class="list-group list-group-flush">
+                  <?php foreach ($wifeMembers as $w): ?>
+                    <li class="list-group-item px-0">
+                      <div class="fw-semibold"><?= e($w['name'] ?? '-') ?></div>
+                      <div class="text-muted small">
+                        <?= e($w['relation_label'] ?? 'Feleség') ?>
+                        <?php if (!empty($w['birth_date'])): ?>
+                          • <?= e(format_date_hu($w['birth_date'])) ?>
+                        <?php endif; ?>
+                      </div>
+                    </li>
+                  <?php endforeach; ?>
+                </ul>
+              <?php else: ?>
+                <div class="text-muted fst-italic">Nincs megadva.</div>
+              <?php endif; ?>
+            </div>
+          </div>
+
+
+          <!-- Children row -->
+          <div class="col-12">
+            <div class="border rounded p-3">
+              <div class="d-flex align-items-center mb-2">
+                <i class="fa-solid fa-children me-2 text-success"></i>
+                <strong>Gyermekek</strong>
+              </div>
+              <?php if (!empty($childrenMembers)): ?>
+                <div class="table-responsive">
+                  <table class="table table-sm align-middle mb-0">
+                    <thead class="table-light">
+                      <tr>
+                        <th>Név</th>
+                        <th>Született</th>
+                        <th>Szülők (apa • anya)</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <?php foreach ($childrenMembers as $c): ?>
+                        <tr>
+                          <td class="fw-semibold"><?= e($c['name'] ?? '-') ?></td>
+                          <td><?= e(!empty($c['birth_date']) ? format_date_hu($c['birth_date']) : '-') ?></td>
+                          <td class="text-muted small">
+                            <?= e($c['father_name'] ?? ($hasHusband ? 'apa' : '-')) ?> •
+                            <?= e($c['mother_name'] ?? ($hasWife    ? 'anya' : '-')) ?>
+                          </td>
+                        </tr>
+                      <?php endforeach; ?>
+                    </tbody>
+                  </table>
+                </div>
+              <?php else: ?>
+                <div class="text-muted fst-italic">Nincs gyermek megadva.</div>
+              <?php endif; ?>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 
+   
     <!-- Add member modal -->
-<div class="modal fade" id="addMemberModal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-lg modal-dialog-centered">
-    <div class="modal-content">
-      <form method="POST" action="<?= base_url('/adatlap/family/member/save') ?>">
-        <div class="modal-header bg-primary text-white">
-          <h5 class="modal-title"><i class="fa-solid fa-user-plus me-1"></i> Új családtag hozzáadása</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+    <div class="modal fade" id="addMemberModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+          <form method="POST" action="<?= base_url('/adatlap/family/member/save') ?>">
+            <div class="modal-header bg-primary text-white">
+              <h5 class="modal-title"><i class="fa-solid fa-user-plus me-1"></i> Új családtag hozzáadása</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+              <?= csrf_field() ?>
+              <input type="hidden" name="family_uuid" value="<?= e($family['uuid']) ?>">
+              <div class="row g-3">
+                <div class="col-md-6">
+                  <label class="form-label">Név</label>
+                  <input type="text" name="name" class="form-control" required>
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label">Kapcsolat</label>
+                  <select name="relation_code" class="form-select" required>
+                    <option value="">-- válassz --</option>
+                    <?php foreach ($relations as $r): ?>
+                      <option value="<?= e($r['code']) ?>"><?= e($r['label_hu']) ?></option>
+                    <?php endforeach; ?>
+                  </select>
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label">Születési dátum</label>
+                  <input type="date" name="birth_date" class="form-control">
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label">Elhalálozás dátuma</label>
+                  <input type="date" name="death_date" class="form-control">
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label d-block">Nem</label>
+                  <div class="form-check form-check-inline">
+                    <input class="form-check-input" type="radio" name="gender" id="genderMale" value="male">
+                    <label class="form-check-label" for="genderMale">Férfi</label>
+                  </div>
+                  <div class="form-check form-check-inline">
+                    <input class="form-check-input" type="radio" name="gender" id="genderFemale" value="female">
+                    <label class="form-check-label" for="genderFemale">Nő</label>
+                  </div>
+                  <div class="form-check form-check-inline">
+                    <input class="form-check-input" type="radio" name="gender" id="genderNone" value="" checked>
+                    <label class="form-check-label" for="genderNone">Nincs megadva</label>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Mégse</button>
+              <button type="submit" class="btn btn-primary">Mentés</button>
+            </div>
+          </form>
         </div>
-        <div class="modal-body">
-          <?= csrf_field() ?>
-          <input type="hidden" name="family_uuid" value="<?= e($family['uuid']) ?>">
-          <div class="row g-3">
-            <div class="col-md-6">
-              <label class="form-label">Név</label>
-              <input type="text" name="name" class="form-control" required>
-            </div>
-            <div class="col-md-6">
-              <label class="form-label">Kapcsolat</label>
-              <select name="relation_code" class="form-select" required>
-                <option value="">-- válassz --</option>
-                <?php foreach ($relations as $r): ?>
-                  <option value="<?= e($r['code']) ?>"><?= e($r['label_hu']) ?></option>
-                <?php endforeach; ?>
-              </select>
-            </div>
-            <div class="col-md-6">
-              <label class="form-label">Születési dátum</label>
-              <input type="date" name="birth_date" class="form-control">
-            </div>
-            <div class="col-md-6">
-              <label class="form-label">Elhalálozás dátuma</label>
-              <input type="date" name="death_date" class="form-control">
-            </div>
-            <div class="col-md-6">
-            <label class="form-label d-block">Nem</label>
-            <div class="form-check form-check-inline">
-              <input class="form-check-input" type="radio" name="gender" id="genderMale" value="male">
-              <label class="form-check-label" for="genderMale">Férfi</label>
-            </div>
-            <div class="form-check form-check-inline">
-              <input class="form-check-input" type="radio" name="gender" id="genderFemale" value="female">
-              <label class="form-check-label" for="genderFemale">Nő</label>
-            </div>
-            <div class="form-check form-check-inline">
-              <input class="form-check-input" type="radio" name="gender" id="genderNone" value="" checked>
-              <label class="form-check-label" for="genderNone">Nincs megadva</label>
-            </div>
-          </div>
-          </div>
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Mégse</button>
-          <button type="submit" class="btn btn-primary">Mentés</button>
-        </div>
-      </form>
+      </div>
     </div>
-  </div>
-</div>
-
 
     <!-- Family tree visual -->
     <div class="card border-primary-subtle mt-4">
@@ -186,7 +274,6 @@ document.addEventListener('DOMContentLoaded', function () {
       const childVal = firstVisibleChildCode();
       if (childVal) {
         relSelect.value = childVal;
-        // Gyereknél nem állítunk nemet automatikusan
         if (genderNone) genderNone.checked = true;
         relSelect.dispatchEvent(new Event('change', {bubbles:true}));
       }
@@ -195,18 +282,14 @@ document.addEventListener('DOMContentLoaded', function () {
 
   function applyFiltering() {
     const allCodes = Array.from(relSelect.options).map(o => (o.value || '').toLowerCase());
-
-    // enable all (placeholder kivételével)
     allCodes.forEach(c => { if (c) setOptionVisibility(relSelect, c, true); });
 
-    // Ha már van férj ÉS feleség → csak gyermek marad
     if (hasHusband && hasWife) {
       allCodes.forEach(c => { if (!CHILDREN.includes(c)) setOptionVisibility(relSelect, c, false); });
       ensureChildSelectedIfNeeded();
       return;
     }
 
-    // Egyik házastárs már létezik → a megfelelő opciókat rejtsük
     if (hasHusband) { SPOUSE_MALE.forEach(c => setOptionVisibility(relSelect, c, false)); }
     if (hasWife)    { SPOUSE_FEMALE.forEach(c => setOptionVisibility(relSelect, c, false)); }
   }
@@ -218,7 +301,6 @@ document.addEventListener('DOMContentLoaded', function () {
     } else if (SPOUSE_FEMALE.includes(c)) {
       if (genderFemale) genderFemale.checked = true;
     } else {
-      // Gyermek/egyéb: hagyjuk, vagy vissza állíthatjuk "Nincs megadva"-ra
       if (genderNone) genderNone.checked = true;
     }
   }
@@ -229,7 +311,6 @@ document.addEventListener('DOMContentLoaded', function () {
     applyGenderAutoSelect(this.value);
   });
 
-  // Ha a modál nyílik meg, és már van férj+feleség, akkor is válasszon automatikusan gyermeket
   const modal = document.getElementById('addMemberModal');
   if (modal) {
     modal.addEventListener('shown.bs.modal', function () {
@@ -238,7 +319,6 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 });
 </script>
-
 
 <!-- Magyar dátumformátum megjelenítés (YYYY.MM.DD) -->
 <script>
@@ -266,7 +346,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function updateDisplay(input) {
     const val = input.value;
-    if (val && /^\d{4}-\d{2}-\d{2}$/.test(val)) {
+    if (val && /^\d{4}-\d{2}-\d2$/.test(val)) { // if you had a helper, keep as-is
       const [y, m, d] = val.split('-');
       input.setAttribute('data-display', `${y}.${m}.${d}`);
     } else {
@@ -275,25 +355,3 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 });
 </script>
-
-<style>
-/* --- Magyar formátumú dátum megjelenítés --- */
-input[type="date"] {
-  position: relative;
-  color: transparent; /* elrejtjük a natív ISO szöveget */
-}
-
-input[type="date"]::after {
-  content: attr(data-display);
-  position: absolute;
-  left: 10px;
-  top: 7px;
-  color: var(--bs-body-color);
-  pointer-events: none;
-  font-size: 0.95em;
-}
-
-input[type="date"]:focus {
-  color: var(--bs-body-color); /* fókuszban mutatja normálisan */
-}
-</style>

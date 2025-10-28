@@ -23,12 +23,36 @@ use App\Apps\Adatlap\Controllers\FamilyController;
 
 return static function (Router $router): void {
 
+
+
+    $router->get('/adatlap', [
+        new RequirePermission('adatlap.lelkesz'),
+        [AdatlapController::class, 'index'] // új redirect handler
+    ]);
+
     // ---------------------------------------------------------
     // --- TANULMÁNYOK (Lelkészhez kötött)
     // ---------------------------------------------------------
     $router->get('/adatlap/studies', [
         new RequirePermission('adatlap.lelkesz'),
         [AdatlapController::class, 'studies']
+    ]);
+
+    $router->post('/adatlap/studies/save', [
+        new RequirePermission('adatlap.lelkesz'),
+        [AdatlapController::class, 'saveStudies']
+    ]);
+
+    // Pastor profil + education lista (csak saját UUID szerkeszthető)
+    $router->get('/adatlap/pastor/{uuid}', [
+        new RequirePermission('adatlap.lelkesz'),
+        [AdatlapController::class, 'pastorProfile']
+    ]);
+
+    // Új education bejegyzés felvétele az adott lelkészhez
+    $router->post('/adatlap/pastor/{uuid}/education/store', [
+        new RequirePermission('adatlap.lelkesz'),
+        [AdatlapController::class, 'storeEducation']
     ]);
 
     // ---------------------------------------------------------

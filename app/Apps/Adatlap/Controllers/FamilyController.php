@@ -35,54 +35,78 @@ final class FamilyController
     // ---------------------------------------------------------
     // GET /adatlap/family
     // ---------------------------------------------------------
-    public function index(): string
-    {
+   public function index(): string
+{
     $user = current_user();
     $families = [];
 
+    // --- DEBUG SWITCH  ---
+    $DBG = false;
+
     try {
-        if (can('adatlap.family.manage')) {
-            // keep admin branch as-is for now
-            $families = $this->families->allFamilies(); // unchanged
+        $canManage = can('adatlap.family.manage');
+        if ($DBG) {
+            error_log("[FamilyController::index][DBG] user_uuid=" . ($user['uuid'] ?? 'NULL') . " canManage=" . ($canManage ? '1' : '0'));
+        }
+
+        if ($canManage) {
+            // Admin: unchanged (see everything)
+            $families = $this->families->allFamilies();
+            if ($DBG) {
+                error_log("[FamilyController::index][DBG] ADMIN branch -> families(all) count=" . count($families));
+            }
         } else {
             $userUuid = $user['uuid'] ?? '';
             if ($userUuid !== '') {
-                // find pastor for current user
-                $pastor = $this->pastors->findByUser($userUuid); // returns ['uuid'=>...]
+                // Find pastor row for the current user
+                $pastor = $this->pastors->findByUser($userUuid); // ['uuid' => ...] or null
                 $pastorUuid = $pastor['uuid'] ?? null;
 
-                $pdo = DB::pdo();
-                if ($pastorUuid) {
-                    // Order: current first, then newest created
-                    $stmt = $pdo->prepare('
-                        SELECT f.*, COALESCE(pr.is_current, false) AS is_current
-                        FROM families f
-                        LEFT JOIN pastor_relationships pr
-                        ON pr.family_uuid = f.uuid
-                        AND pr.pastor_uuid = :pastor_uuid
-                        WHERE f.created_by_uuid = :user_uuid
-                        ORDER BY pr.is_current DESC, f.created_at DESC
-                    ');
-                    $stmt->execute([
-                        ':pastor_uuid' => $pastorUuid,
-                        ':user_uuid'   => $userUuid,
-                    ]);
-                } else {
-                    // Fallback: original behavior
-                    $stmt = $pdo->prepare('
-                        SELECT f.*, false AS is_current
-                        FROM families f
-                        WHERE f.created_by_uuid = :user_uuid
-                        ORDER BY f.created_at DESC
-                    ');
-                    $stmt->execute([':user_uuid' => $userUuid]);
+                if ($DBG) {
+                    error_log("[FamilyController::index][DBG] resolved pastor_uuid=" . ($pastorUuid ?: 'NULL') . " for user_uuid=" . $userUuid);
                 }
 
-                $families = $stmt->fetchAll(\PDO::FETCH_ASSOC) ?: [];
+                if ($pastorUuid) {
+                    $pdo = DB::pdo();
+
+                    // Extra: count PR rows for this pastor (diagnostics)
+                    $cnt = $pdo->prepare('SELECT COUNT(*) FROM pastor_relationships WHERE pastor_uuid = :p');
+                    $cnt->execute([':p' => $pastorUuid]);
+                    $prCount = (int)$cnt->fetchColumn();
+                    if ($DBG) {
+                        error_log("[FamilyController::index][DBG] PR rows for pastor_uuid={$pastorUuid}: {$prCount}");
+                    }
+
+                    // Only families linked to THIS pastor via PR
+                    $stmt = $pdo->prepare('
+                        SELECT f.*, COALESCE(pr.is_current, false) AS is_current
+                        FROM pastor_relationships pr
+                        JOIN families f ON f.uuid = pr.family_uuid
+                        WHERE pr.pastor_uuid = :pastor_uuid
+                        ORDER BY pr.is_current DESC, f.created_at DESC
+                    ');
+                    $stmt->execute([':pastor_uuid' => $pastorUuid]);
+                    $families = $stmt->fetchAll(\PDO::FETCH_ASSOC) ?: [];
+
+                    if ($DBG) {
+                        error_log("[FamilyController::index][DBG] filtered families for pastor_uuid={$pastorUuid}: " . count($families));
+                        // opcionális: felsoroljuk az UUID-kat
+                        $uuids = array_map(fn($r) => $r['uuid'] ?? 'NULL', $families);
+                        error_log("[FamilyController::index][DBG] family_uuids=[" . implode(',', $uuids) . "]");
+                    }
+                } else {
+                    // Not a pastor: no families visible
+                    $families = [];
+                    if ($DBG) {
+                        error_log("[FamilyController::index][DBG] user is not linked to pastors -> families count=0");
+                    }
+                }
+            } else {
+                if ($DBG) error_log("[FamilyController::index][DBG] userUuid EMPTY");
             }
         }
     } catch (\Throwable $e) {
-        error_log('[FamilyController::index] ' . $e->getMessage());
+        error_log('[FamilyController::index][ERR] ' . $e->getMessage());
         $families = [];
     }
 
@@ -90,7 +114,8 @@ final class FamilyController
         'title'    => 'Családok',
         'families' => $families,
     ]);
-    }
+}
+
 
     // ---------------------------------------------------------
     // GET /adatlap/family/{uuid}
@@ -530,95 +555,124 @@ final class FamilyController
     // ---------------------------------------------------------
     // POST /adatlap/family/store Create new family
     // ---------------------------------------------------------
-        /**
-     * Store new family (pastor self-create)
-     */
-  public function store(): void
-{
-    require_can('adatlap.family.create');
 
-    if (!verify_csrf()) {
-        flash_set('error', 'Érvénytelen vagy hiányzó biztonsági token.');
-        header('Location: ' . base_url('/adatlap/family/create'));
-        exit;
-    }
+    public function store(): void
+    {
+        require_can('adatlap.family.create');
 
-    // --- Aktuális user lekérése ---
-    $currentUser = \current_user();
-    $userUuid = $currentUser['uuid'] ?? null;
-
-    if (!$userUuid) {
-        flash_set('error', 'Nem található a bejelentkezett felhasználó azonosítója.');
-        header('Location: ' . base_url('/adatlap/family/create'));
-        exit;
-    }
-
-    $name = trim($_POST['family_name'] ?? '');
-    if ($name === '') {
-        flash_set('error', 'A családnév megadása kötelező.');
-        header('Location: ' . base_url('/adatlap/family/create'));
-        exit;
-    }
-
-    try {
-        $pdo = DB::pdo();
-        $pdo->beginTransaction();
-
-        // --- Kapcsolódó pastor UUID keresése ---
-        $stmt = $pdo->prepare("SELECT uuid FROM pastors WHERE user_uuid = :user_uuid LIMIT 1");
-        $stmt->execute([':user_uuid' => $userUuid]);
-        $pastorUuid = $stmt->fetchColumn();
-
-        if (!$pastorUuid) {
-            throw new \Exception('Nincs a felhasználóhoz tartozó lelkész rekord.');
+        if (!verify_csrf()) {
+            flash_set('error', 'Érvénytelen vagy hiányzó biztonsági token.');
+            header('Location: ' . base_url('/adatlap/family/create'));
+            exit;
         }
 
-        // --- Új család beszúrása ---
-        $stmt = $pdo->prepare("
-            INSERT INTO families (uuid, family_name, created_by_uuid, updated_by_uuid, created_at, updated_at)
-            VALUES (gen_random_uuid(), :name, :created_by_uuid, :updated_by_uuid, NOW(), NOW())
-            RETURNING uuid
-        ");
-        $stmt->execute([
-            ':name'            => $name,
-            ':created_by_uuid' => $userUuid,
-            ':updated_by_uuid' => $userUuid,
-        ]);
-        $familyUuid = $stmt->fetchColumn();
+        // --- Aktuális user lekérése ---
+        $currentUser = \current_user();
+        $userUuid = $currentUser['uuid'] ?? null;
 
-        // --- Ellenőrzés: van-e már aktív családja ennek a lelkésznek ---
-        $check = $pdo->prepare("
-            SELECT COUNT(*) FROM pastor_relationships
-            WHERE pastor_uuid = :pastor_uuid AND is_current = TRUE
-        ");
-        $check->execute([':pastor_uuid' => $pastorUuid]);
-        $hasCurrent = (int)$check->fetchColumn() > 0;
-
-        // --- Kapcsolat beszúrása ---
-        $rel = $pdo->prepare("
-            INSERT INTO pastor_relationships (uuid, pastor_uuid, family_uuid, is_current)
-            VALUES (gen_random_uuid(), :pastor_uuid, :family_uuid, :is_current)
-        ");
-       $isCurrent = $hasCurrent ? false : true;
-
-        $rel->bindValue(':pastor_uuid', $pastorUuid);
-        $rel->bindValue(':family_uuid', $familyUuid);
-        $rel->bindValue(':is_current', $isCurrent, \PDO::PARAM_BOOL);
-        $rel->execute();
-
-        
-        $pdo->commit();
-        flash_set('success', 'A család sikeresen létrehozva.');
-    } catch (\Throwable $e) {
-        if (isset($pdo)) {
-            $pdo->rollBack();
+        if (!$userUuid) {
+            flash_set('error', 'Nem található a bejelentkezett felhasználó azonosítója.');
+            header('Location: ' . base_url('/adatlap/family/create'));
+            exit;
         }
-        flash_set('error', 'Hiba történt a mentés közben: ' . $e->getMessage());
+
+        $name = trim($_POST['family_name'] ?? '');
+
+        // NEW: marriage fields
+        $marriageDate  = trim($_POST['marriage_date'] ?? '');
+        $marriagePlace = trim($_POST['marriage_place'] ?? '');
+
+        if ($name === '') {
+            flash_set('error', 'A családnév megadása kötelező.');
+            header('Location: ' . base_url('/adatlap/family/create'));
+            exit;
+        }
+
+        try {
+            $pdo = DB::pdo();
+            $pdo->beginTransaction();
+
+            // --- Kapcsolódó pastor UUID keresése ---
+            $stmt = $pdo->prepare("SELECT uuid FROM pastors WHERE user_uuid = :user_uuid LIMIT 1");
+            $stmt->execute([':user_uuid' => $userUuid]);
+            $pastorUuid = $stmt->fetchColumn();
+
+            if (!$pastorUuid) {
+                throw new \Exception('Nincs a felhasználóhoz tartozó lelkész rekord.');
+            }
+
+            // --- Új család beszúrása ---
+            $stmt = $pdo->prepare("
+                INSERT INTO families (uuid, family_name, created_by_uuid, updated_by_uuid, created_at, updated_at)
+                VALUES (gen_random_uuid(), :name, :created_by_uuid, :updated_by_uuid, NOW(), NOW())
+                RETURNING uuid
+            ");
+            $stmt->execute([
+                ':name'            => $name,
+                ':created_by_uuid' => $userUuid,
+                ':updated_by_uuid' => $userUuid,
+            ]);
+            $familyUuid = $stmt->fetchColumn();
+
+            // --- Ellenőrzés: van-e már aktív családja ennek a lelkésznek ---
+            $check = $pdo->prepare("
+                SELECT COUNT(*) FROM pastor_relationships
+                WHERE pastor_uuid = :pastor_uuid AND is_current = TRUE
+            ");
+            $check->execute([':pastor_uuid' => $pastorUuid]);
+            $hasCurrent = (int)$check->fetchColumn() > 0;
+
+            // --- Kapcsolat beszúrása ---
+            // NOTE: start_date / end_date most kimarad; marriage_end_date NULL
+            $rel = $pdo->prepare("
+                INSERT INTO pastor_relationships
+                (uuid, pastor_uuid, family_uuid, marriage_date, marriage_place, is_current)
+                VALUES
+                (gen_random_uuid(), :pastor_uuid, :family_uuid, :marriage_date, :marriage_place, :is_current)
+            ");
+            $isCurrent = $hasCurrent ? false : true;
+
+            $rel->bindValue(':pastor_uuid',    $pastorUuid);
+            $rel->bindValue(':family_uuid',    $familyUuid);
+            $rel->bindValue(':marriage_date',  $marriageDate !== '' ? $marriageDate : null);
+            $rel->bindValue(':marriage_place', $marriagePlace !== '' ? $marriagePlace : null);
+            $rel->bindValue(':is_current',     $isCurrent, \PDO::PARAM_BOOL);
+            $rel->execute();
+
+            $pdo->commit();
+            flash_set('success', 'A család sikeresen létrehozva.');
+        } catch (\Throwable $e) {
+            if (isset($pdo) && $pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
+
+            // Friendly error for unique violation on current pastor relationship
+            if ($e instanceof \PDOException) {
+                $sqlState  = $e->getCode();           // e.g. '23505'
+                $errorInfo = $e->errorInfo ?? [];     // [sqlstate, drv_code, message]
+                $pgMessage = $errorInfo[2] ?? $e->getMessage();
+
+                if ($sqlState === '23505' && stripos($pgMessage, 'uidx_prel_current_per_pastor') !== false) {
+                    flash_set('warning',
+                        'Nem hozható létre új, „jelenlegi” házassági kapcsolat ehhez a lelkészhez, '
+                        . 'mert már van egy aktív kapcsolat. '
+                        . 'Zárd le a korábbit (vagy hagyd üresen a házasság dátumát a létrehozáskor), majd próbáld újra.'
+                    );
+                    header('Location: ' . base_url('/adatlap/family'));
+                    exit;
+                }
+            }
+
+            error_log('[FamilyController::store][ERR] ' . $e->getMessage());
+            flash_set('error', 'Hiba történt a mentés közben.');
+            header('Location: ' . base_url('/adatlap/family'));
+            exit;
+        }
+
+        header('Location: ' . base_url('/adatlap/family'));
+        exit;
     }
 
-    header('Location: ' . base_url('/adatlap/family'));
-    exit;
-}
 
 
 }

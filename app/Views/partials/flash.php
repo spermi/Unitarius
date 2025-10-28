@@ -40,7 +40,7 @@ if (!empty($flashes) && is_array($flashes)): ?>
         const alert = bootstrap.Alert.getOrCreateInstance(el);
         alert.close();
       });
-    }, 4000);
+    }, 10000);
   });
   </script>
 <?php endif; ?>
