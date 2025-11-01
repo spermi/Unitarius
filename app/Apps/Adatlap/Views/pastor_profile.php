@@ -33,8 +33,11 @@ $pastorUuid = $pastor['uuid'] ?? '';
 
     <!-- Pastor basic info (read-only) -->
     <div class="card border-primary-subtle mb-4">
-      <div class="card-header">
+      <div class="card-header d-flex justify-content-between align-items-center">
         <h5 class="card-title mb-0"><i class="fa-solid fa-id-card-clip me-2"></i>Személyes adatok</h5>
+        <a href="<?= base_url('/adatlap/pastor/' . e($pastorUuid) . '/edit') ?>" class="btn btn-primary btn-sm">
+          <i class="fa-solid fa-pencil me-1"></i> Szerkesztés
+        </a>
       </div>
       <div class="card-body">
         <div class="row g-3">
@@ -115,7 +118,8 @@ $pastorUuid = $pastor['uuid'] ?? '';
                     <span class="text-muted">—</span>
                   </td>
                 </tr>
-                <?php if (!empty($row['note'])): ?>
+                <?php if (!empty($row['note'])):
+                  ?>
                   <tr>
                     <td colspan="5" class="text-muted small">
                       <i class="fa-regular fa-note-sticky me-1"></i><?= e((string)$row['note']) ?>
@@ -179,3 +183,39 @@ $pastorUuid = $pastor['uuid'] ?? '';
     </div>
   </div>
 </div>
+
+<!-- Magyar dátumformátum megjelenítés (YYYY.MM.DD) -->
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const dateInputs = document.querySelectorAll('input[type="date"]');
+
+  dateInputs.forEach(input => {
+    input.placeholder = 'ÉÉÉÉ.HH.NN';
+
+    if (input.value) updateDisplay(input);
+
+    input.addEventListener('change', e => {
+      updateDisplay(e.target);
+    });
+
+    input.addEventListener('blur', e => {
+      const val = e.target.value.trim();
+      if (/^\d{4}\.\d{2}\.\d{2}$/.test(val)) {
+        const [y, m, d] = val.split('.');
+        e.target.value = `${y}-${m}-${d}`;
+        updateDisplay(e.target);
+      }
+    });
+  });
+
+  function updateDisplay(input) {
+    const val = input.value;
+    if (val && /^\d{4}-\d{2}-\d{2}$/.test(val)) {
+      const [y, m, d] = val.split('-');
+      input.setAttribute('data-display', `${y}.${m}.${d}`);
+    } else {
+      input.removeAttribute('data-display');
+    }
+  }
+});
+</script>

@@ -30,23 +30,24 @@ return static function (Router $router): void {
         [AdatlapController::class, 'index'] // új redirect handler
     ]);
 
-    // ---------------------------------------------------------
-    // --- TANULMÁNYOK (Lelkészhez kötött)
-    // ---------------------------------------------------------
-    $router->get('/adatlap/studies', [
-        new RequirePermission('adatlap.lelkesz'),
-        [AdatlapController::class, 'studies']
-    ]);
 
-    $router->post('/adatlap/studies/save', [
-        new RequirePermission('adatlap.lelkesz'),
-        [AdatlapController::class, 'saveStudies']
-    ]);
 
     // Pastor profil + education lista (csak saját UUID szerkeszthető)
     $router->get('/adatlap/pastor/{uuid}', [
         new RequirePermission('adatlap.lelkesz'),
         [AdatlapController::class, 'pastorProfile']
+    ]);
+
+    // Pastor profil szerkesztése
+    $router->get('/adatlap/pastor/{uuid}/edit', [
+        new RequirePermission('adatlap.lelkesz'),
+        [AdatlapController::class, 'editPastorProfile']
+    ]);
+
+    // Pastor profil frissítése
+    $router->post('/adatlap/pastor/{uuid}/update', [
+        new RequirePermission('adatlap.lelkesz'),
+        [AdatlapController::class, 'updatePastorProfile']
     ]);
 
     // Új education bejegyzés felvétele az adott lelkészhez
@@ -71,6 +72,11 @@ return static function (Router $router): void {
     $router->post('/adatlap/family/member/save', [
         new RequirePermission('adatlap.lelkesz'),
         [FamilyController::class, 'saveMember']
+    ]);
+
+    $router->post('/adatlap/family/marriage/update', [
+        new RequirePermission('adatlap.lelkesz'),
+        [FamilyController::class, 'updateMarriage']
     ]);
 
     $router->get('/adatlap/family/tree/{uuid}', [

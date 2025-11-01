@@ -2,10 +2,15 @@
 /storage/logs
 /Old_versioned_files
 /vendor/
+/tests/
 .env*
 tree.php
 *.log
 pastors_db.dbml
 pastor_demo.dbml
 .vscode/
+.gemini/   
 permissions.md
+GEMINI.md
+.geminiignore
+folytat.txt

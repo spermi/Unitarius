@@ -72,7 +72,7 @@ public function doLogin(): void
 
     try {
         $pdo = DB::pdo();
-        $stmt = $pdo->prepare('SELECT id,email,password_hash,name,status,avatar FROM users WHERE email = :email LIMIT 1');
+        $stmt = $pdo->prepare('SELECT id,uuid,email,password_hash,name,status,avatar FROM users WHERE email = :email LIMIT 1');
         $stmt->execute([':email' => $email]);
         $user = $stmt->fetch(\PDO::FETCH_ASSOC) ?: null;
 
@@ -113,6 +113,8 @@ public function doLogin(): void
     } catch (\Throwable $e) {
         error_log('[Password Login] failed to update last_login_at: ' . $e->getMessage());
     }
+
+    $this->synchronizePastorData($user);
 
     unset($_SESSION['auth_provider'], $_SESSION['oauth_name'], $_SESSION['oauth_avatar']);
     login_user($user);
@@ -247,7 +249,7 @@ public function googleCallback(): void
 
         $pdo = \Core\DB::pdo();
 
-        $stmt = $pdo->prepare('SELECT id,email,password_hash,name,status,avatar FROM users WHERE email = :email LIMIT 1');
+        $stmt = $pdo->prepare('SELECT id,uuid,email,password_hash,name,status,avatar FROM users WHERE email = :email LIMIT 1');
         $stmt->execute([':email' => $email]);
         $user = $stmt->fetch(\PDO::FETCH_ASSOC) ?: null;
 
@@ -297,7 +299,7 @@ public function googleCallback(): void
                 $ins = $pdo->prepare(
                     'INSERT INTO users (email, password_hash, name, status, avatar, last_login_at, created_at, updated_at)
                      VALUES (:email, :ph, :name, 1, :avatar, NOW(), NOW(), NOW())
-                     RETURNING id, email, password_hash, name, status, avatar'
+                     RETURNING id, uuid, email, password_hash, name, status, avatar'
                 );
                 $ins->execute([
                     ':email'  => $email,
@@ -329,6 +331,8 @@ public function googleCallback(): void
             }
         }
 
+        $this->synchronizePastorData($user);
+
         $_SESSION['auth_provider'] = 'google';
         if ($nameG   !== '') { $_SESSION['oauth_name']   = $nameG; }
         if ($avatarG !== '') { $_SESSION['oauth_avatar'] = $avatarG; }
@@ -356,6 +360,49 @@ public function googleCallback(): void
         $_SESSION['flash_error'] = 'Google login kivétel.';
         header('Location: ' . base_url('/login'));
         exit;
+    }
+}
+
+private function synchronizePastorData(array $user): void
+{
+    // User must be logged in and have a UUID
+    if (empty($user['uuid'])) {
+        return;
+    }
+
+    try {
+        $pdo = DB::pdo();
+        
+        // Find the pastor record linked to this user
+        $stmt = $pdo->prepare("SELECT uuid FROM pastors WHERE user_uuid = :user_uuid LIMIT 1");
+        $stmt->execute([':user_uuid' => $user['uuid']]);
+        $pastorUuid = $stmt->fetchColumn();
+
+        // If a pastor record exists, synchronize the name
+        if ($pastorUuid) {
+            $userName = trim($user['name'] ?? '');
+            if (empty($userName)) {
+                return; // Cannot sync from an empty user name
+            }
+
+            // Simple name parsing (assuming "Lastname Firstname")
+            $parts = explode(' ', $userName, 2);
+            $lastName = $parts[0];
+            $firstName = $parts[1] ?? '';
+
+            // Update the pastor's names
+            $updateStmt = $pdo->prepare(
+                "UPDATE pastors SET last_name = :last_name, first_name = :first_name, updated_at = NOW() WHERE uuid = :uuid"
+            );
+            $updateStmt->execute([
+                ':last_name' => $lastName,
+                ':first_name' => $firstName,
+                ':uuid' => $pastorUuid
+            ]);
+        }
+    } catch (\Throwable $e) {
+        // Log the error but do not block the login process
+        error_log('[AuthController::synchronizePastorData] ' . $e->getMessage());
     }
 }
 

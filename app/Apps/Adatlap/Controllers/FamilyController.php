@@ -79,11 +79,16 @@ final class FamilyController
 
                     // Only families linked to THIS pastor via PR
                     $stmt = $pdo->prepare('
-                        SELECT f.*, COALESCE(pr.is_current, false) AS is_current
+                        SELECT 
+                            f.*, 
+                            pr.marriage_date, 
+                            pr.marriage_place, 
+                            pr.marriage_end_date,
+                            pr.is_current
                         FROM pastor_relationships pr
                         JOIN families f ON f.uuid = pr.family_uuid
                         WHERE pr.pastor_uuid = :pastor_uuid
-                        ORDER BY pr.is_current DESC, f.created_at DESC
+                        ORDER BY pr.marriage_date DESC
                     ');
                     $stmt->execute([':pastor_uuid' => $pastorUuid]);
                     $families = $stmt->fetchAll(\PDO::FETCH_ASSOC) ?: [];
@@ -133,8 +138,8 @@ final class FamilyController
 
         $family = null;
         $members = [];
-        $pastor = null;
         $relations = [];
+        $relationship = [];
 
         try {
             $pdo = DB::pdo();
@@ -152,6 +157,15 @@ final class FamilyController
                 ');
                 $stmt->execute([':uuid' => $uuid]);
                 $members = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+
+                // Fetch relationship data for the current pastor
+                $user = current_user();
+                $pastor = $this->pastors->findByUser($user['uuid'] ?? '');
+                if ($pastor) {
+                    $rel_stmt = $pdo->prepare('SELECT * FROM pastor_relationships WHERE family_uuid = :family_uuid AND pastor_uuid = :pastor_uuid');
+                    $rel_stmt->execute([':family_uuid' => $uuid, ':pastor_uuid' => $pastor['uuid']]);
+                    $relationship = $rel_stmt->fetch() ?: null;
+                }
             }
         } catch (\Throwable $e) {
             error_log('[FamilyController::show] ' . $e->getMessage());
@@ -166,11 +180,11 @@ final class FamilyController
         }
 
         return View::render('family_detail', [
-            'title'      => $family['family_name'] ?? 'Család',
-            'family'     => $family,
-            'members'    => $members,
-            'pastor'     => $pastor,
-            'relations'  => $relations,
+            'title'        => $family['family_name'] ?? 'Család',
+            'family'       => $family,
+            'members'      => $members,
+            'relationship' => $relationship,
+            'relations'    => $relations,
         ]);
     }
 
@@ -188,295 +202,364 @@ final class FamilyController
             exit;
         }
 
-        $currentUser = \current_user();
-        $userUuid    = $currentUser['uuid'] ?? null;
+        $requestData = [
+            'family_uuid'        => trim($_POST['family_uuid'] ?? ''),
+            'member_uuid'        => trim($_POST['member_uuid'] ?? ''),
+            'relation_code'      => trim($_POST['relation_code'] ?? ''),
+            'name'               => trim($_POST['name'] ?? ''),
+            'birth_date'         => trim($_POST['birth_date'] ?? ''),
+            'death_date'         => trim($_POST['death_date'] ?? ''),
+            'spouse_pastor_uuid' => trim($_POST['spouse_pastor_uuid'] ?? ''),
+            'gender'             => strtolower(trim($_POST['gender'] ?? '')),
+        ];
 
-        $familyUuid        = trim($_POST['family_uuid'] ?? '');
-        $relationCodeInput = trim($_POST['relation_code'] ?? '');
-        $name              = trim($_POST['name'] ?? '');
-        $birthDate         = trim($_POST['birth_date'] ?? '');
-        $deathDate         = trim($_POST['death_date'] ?? '');
-        // optional: if spouse is also a pastor, frontend küldheti (UUID selectből)
-        $spousePastorUuid  = trim($_POST['spouse_pastor_uuid'] ?? '');
-
-        // gender from form (radio): 'male' | 'female' | ''
-        $gender = strtolower(trim($_POST['gender'] ?? ''));
-        if ($gender !== 'male' && $gender !== 'female') {
-            $gender = null;
+        if ($requestData['gender'] !== 'male' && $requestData['gender'] !== 'female') {
+            $requestData['gender'] = null;
         }
 
-        $redirectUrl = base_url('/adatlap/family/' . $familyUuid);
+        $redirectUrl = base_url('/adatlap/family/' . $requestData['family_uuid']);
 
-        if ($familyUuid === '' || $relationCodeInput === '') {
-            flash_set('error', 'Hiányzó kötelező mezők (család vagy kapcsolat típus).');
-            header('Location: ' . $redirectUrl);
+        if ($requestData['family_uuid'] === '') {
+            flash_set('error', 'Hiányzó család azonosító.');
+            header('Location: ' . base_url('/adatlap/family'));
             exit;
         }
 
         try {
-            $pdo = DB::pdo();
-            $pdo->beginTransaction();
-
-            //---------------------------------------------------------
-            // 0) permission: family belongs to current pastor?
-            //---------------------------------------------------------
-            $stmt = $pdo->prepare("
-                SELECT COUNT(*) FROM pastor_relationships
-                WHERE pastor_uuid = (SELECT uuid FROM pastors WHERE user_uuid = :user_uuid)
-                AND family_uuid  = :family_uuid
-            ");
-            $stmt->execute([':user_uuid' => $userUuid, ':family_uuid' => $familyUuid]);
-            if ((int)$stmt->fetchColumn() === 0) {
-                $pdo->rollBack();
-                flash_set('error', 'Nem adhatsz hozzá tagot ehhez a családhoz.');
-                header('Location: ' . base_url('/adatlap/family'));
-                exit;
+            if ($requestData['member_uuid'] !== '') {
+                $this->updateMember($requestData, $redirectUrl);
+            } else {
+                $this->createMember($requestData, $redirectUrl);
             }
+        } catch (\Throwable $e) {
+            if (isset($pdo) && $pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
+            flash_set('error', 'Hiba történt a mentés közben: ' . $e->getMessage());
+            header('Location: ' . $redirectUrl);
+            exit;
+        }
+    }
 
-            //---------------------------------------------------------
-            // 1) normalize relation code (accept HU label too)
-            //---------------------------------------------------------
-            $stmt = $pdo->prepare("
-                SELECT
-                    code,
-                    (code IN ('husband','wife'))   AS is_spouse,
-                    (code IN ('child','children')) AS is_child
-                FROM relation_type
-                WHERE LOWER(code) = LOWER(:v) OR label_hu ILIKE :v
+    private function updateMember(array $data, string $redirectUrl): void
+    {
+        $currentUser = current_user();
+        $userUuid = $currentUser['uuid'] ?? null;
+
+        if ($data['relation_code'] === '' || $data['name'] === '') {
+            flash_set('error', 'A név és a kapcsolat típus megadása kötelező.');
+            header('Location: ' . $redirectUrl);
+            exit;
+        }
+
+        $pdo = DB::pdo();
+        $pdo->beginTransaction();
+
+        // Permission check: can the current user edit this member?
+        $stmt = $pdo->prepare("
+            SELECT COUNT(*) 
+            FROM family_members fm
+            JOIN pastor_relationships pr ON fm.family_uuid = pr.family_uuid
+            JOIN pastors p ON pr.pastor_uuid = p.uuid
+            WHERE fm.uuid = :member_uuid AND p.user_uuid = :user_uuid
+        ");
+        $stmt->execute([':member_uuid' => $data['member_uuid'], ':user_uuid' => $userUuid]);
+
+        if ((int)$stmt->fetchColumn() === 0) {
+            $pdo->rollBack();
+            flash_set('error', 'Nincs jogosultságod a tag szerkesztéséhez.');
+            header('Location: ' . $redirectUrl);
+            exit;
+        }
+
+        $sql = "
+            UPDATE family_members SET
+                name = :name,
+                relation_code = :relation_code,
+                birth_date = :birth_date,
+                death_date = :death_date,
+                gender = :gender,
+                updated_at = NOW()
+            WHERE uuid = :member_uuid
+        ";
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute([
+            ':name' => $data['name'],
+            ':relation_code' => $data['relation_code'],
+            ':birth_date' => $data['birth_date'] ?: null,
+            ':death_date' => $data['death_date'] ?: null,
+            ':gender' => $data['gender'],
+            ':member_uuid' => $data['member_uuid']
+        ]);
+
+        $pdo->commit();
+        flash_set('success', 'Családtag sikeresen frissítve.');
+        header('Location: ' . $redirectUrl);
+        exit;
+    }
+
+    private function createMember(array $data, string $redirectUrl): void
+    {
+        $currentUser = current_user();
+        $userUuid = $currentUser['uuid'] ?? null;
+
+        if ($data['relation_code'] === '') {
+            flash_set('error', 'Hiányzó kapcsolat típus.');
+            header('Location: ' . $redirectUrl);
+            exit;
+        }
+
+        $pdo = DB::pdo();
+        $pdo->beginTransaction();
+
+        //---------------------------------------------------------
+        // 0) permission: family belongs to current pastor?
+        //---------------------------------------------------------
+        $stmt = $pdo->prepare("
+            SELECT COUNT(*) FROM pastor_relationships
+            WHERE pastor_uuid = (SELECT uuid FROM pastors WHERE user_uuid = :user_uuid)
+            AND family_uuid  = :family_uuid
+        ");
+        $stmt->execute([':user_uuid' => $userUuid, ':family_uuid' => $data['family_uuid']]);
+        if ((int)$stmt->fetchColumn() === 0) {
+            $pdo->rollBack();
+            flash_set('error', 'Nem adhatsz hozzá tagot ehhez a családhoz.');
+            header('Location: ' . base_url('/adatlap/family'));
+            exit;
+        }
+
+        //---------------------------------------------------------
+        // 1) normalize relation code (accept HU label too)
+        //---------------------------------------------------------
+        $stmt = $pdo->prepare("
+            SELECT
+                code,
+                (code IN ('husband','wife'))   AS is_spouse,
+                (code IN ('child','children')) AS is_child
+            FROM relation_type
+            WHERE LOWER(code) = LOWER(:v) OR label_hu ILIKE :v
+            LIMIT 1
+        ");
+        $stmt->execute([':v' => $data['relation_code']]);
+        $row = $stmt->fetch(\PDO::FETCH_ASSOC);
+        if (!$row) {
+            $pdo->rollBack();
+            flash_set('error', 'Érvénytelen kapcsolat típus.');
+            header('Location: ' . $redirectUrl);
+            exit;
+        }
+        $relationCode = (string)$row['code'];
+        $isSpouse     = !empty($row['is_spouse']);
+        $isChild      = !empty($row['is_child']);
+
+        //---------------------------------------------------------
+        // 2) current pastor
+        //---------------------------------------------------------
+        $stmt = $pdo->prepare("SELECT uuid, first_name, last_name FROM pastors WHERE user_uuid = :u LIMIT 1");
+        $stmt->execute([':u' => $userUuid]);
+        $pastorRow = $stmt->fetch(\PDO::FETCH_ASSOC);
+        $currentPastorUuid = $pastorRow['uuid'] ?? null;
+        $currentPastorName = trim(($pastorRow['last_name'] ?? '') . ' ' . ($pastorRow['first_name'] ?? ''));
+
+        // * Helper: ensure pastor has a member row (husband|wife) in this family
+        $ensurePastorMember = function() use ($pdo, $data, $userUuid, $currentPastorUuid, $currentPastorName): string {
+            $q = $pdo->prepare("
+                SELECT uuid FROM family_members
+                WHERE family_uuid = :f
+                AND (pastor_uuid = :p OR user_uuid = :u)
+                AND relation_code IN ('husband','wife')
                 LIMIT 1
             ");
-            $stmt->execute([':v' => $relationCodeInput]);
-            $row = $stmt->fetch(\PDO::FETCH_ASSOC);
-            if (!$row) {
+            $q->execute([':f' => $data['family_uuid'], ':p' => $currentPastorUuid, ':u' => $userUuid]);
+            $mid = $q->fetchColumn();
+            if ($mid) {
+                if ($currentPastorUuid) {
+                    $u = $pdo->prepare("UPDATE family_members SET pastor_uuid = :p WHERE uuid = :m AND pastor_uuid IS NULL");
+                    $u->execute([':p' => $currentPastorUuid, ':m' => $mid]);
+                }
+                return (string)$mid;
+            }
+
+            // choose role by current family state
+            $q = $pdo->prepare("
+                SELECT
+                    SUM((relation_code='husband')::int) AS husbands,
+                    SUM((relation_code='wife')::int)    AS wives
+                FROM family_members
+                WHERE family_uuid = :f
+            ");
+            $q->execute([':f' => $data['family_uuid']]);
+            $c = $q->fetch(\PDO::FETCH_ASSOC) ?: ['husbands' => 0, 'wives' => 0];
+            $role = ((int)$c['wives'] > 0 && (int)$c['husbands'] === 0) ? 'husband'
+                : ((int)$c['husbands'] > 0 && (int)$c['wives'] === 0 ? 'wife' : 'husband');
+
+            $roleGender = ($role === 'husband' ? 'male' : ($role === 'wife' ? 'female' : null));
+
+            $q = $pdo->prepare("
+                INSERT INTO family_members
+                (uuid, family_uuid, user_uuid, pastor_uuid, parent_uuid, name, relation_code, gender, birth_date, death_date, created_at, updated_at)
+                VALUES
+                (gen_random_uuid(), :f, :u, :p, NULL, :n, :r, :rg, NULL, NULL, NOW(), NOW())
+                RETURNING uuid
+            ");
+            $q->execute([
+                ':f' => $data['family_uuid'],
+                ':u' => $userUuid,
+                ':p' => $currentPastorUuid,
+                ':n' => $currentPastorName,
+                ':r' => $role,
+                ':rg' => $roleGender,
+            ]);
+            return (string)$q->fetchColumn();
+        };
+
+        // * Helper: read current husband/wife member uuids in this family
+        $fetchSpouses = function() use ($pdo, $data): array {
+            $h = $pdo->prepare("SELECT uuid FROM family_members WHERE family_uuid = :f AND relation_code = 'husband' LIMIT 1");
+            $w = $pdo->prepare("SELECT uuid FROM family_members WHERE family_uuid = :f AND relation_code = 'wife'    LIMIT 1");
+            $h->execute([':f' => $data['family_uuid']]);
+            $w->execute([':f' => $data['family_uuid']]);
+            return [
+                'husband' => $h->fetchColumn() ?: null,
+                'wife'    => $w->fetchColumn() ?: null,
+            ];
+        };
+
+        //---------------------------------------------------------
+        // 3) parent fallback for child + prefill father/mother for the NEW child (if spouses exist)
+        //---------------------------------------------------------
+        $parentUuid = null;
+        $fatherUuid = null;
+        $motherUuid = null;
+        if ($isChild) {
+            if (!$currentPastorUuid) {
                 $pdo->rollBack();
-                flash_set('error', 'Érvénytelen kapcsolat típus.');
+                flash_set('error', 'Hiányzó pastor rekord a felhasználóhoz.');
                 header('Location: ' . $redirectUrl);
                 exit;
             }
-            $relationCode = (string)$row['code'];
-            $isSpouse     = !empty($row['is_spouse']);
-            $isChild      = !empty($row['is_child']);
+            $parentUuid = $ensurePastorMember();
 
-            //---------------------------------------------------------
-            // 2) current pastor
-            //---------------------------------------------------------
-            $stmt = $pdo->prepare("SELECT uuid, full_name FROM pastors WHERE user_uuid = :u LIMIT 1");
-            $stmt->execute([':u' => $userUuid]);
-            $pastorRow = $stmt->fetch(\PDO::FETCH_ASSOC);
-            $currentPastorUuid = $pastorRow['uuid'] ?? null;
-            $currentPastorName = $pastorRow['full_name'] ?? null;
-
-            // * Helper: ensure pastor has a member row (husband|wife) in this family
-            $ensurePastorMember = function() use ($pdo, $familyUuid, $userUuid, $currentPastorUuid, $currentPastorName): string {
-                $q = $pdo->prepare("
-                    SELECT uuid FROM family_members
-                    WHERE family_uuid = :f
-                    AND (pastor_uuid = :p OR user_uuid = :u)
-                    AND relation_code IN ('husband','wife')
-                    LIMIT 1
-                ");
-                $q->execute([':f'=>$familyUuid, ':p'=>$currentPastorUuid, ':u'=>$userUuid]);
-                $mid = $q->fetchColumn();
-                if ($mid) {
-                    if ($currentPastorUuid) {
-                        $u = $pdo->prepare("UPDATE family_members SET pastor_uuid = :p WHERE uuid = :m AND pastor_uuid IS NULL");
-                        $u->execute([':p'=>$currentPastorUuid, ':m'=>$mid]);
-                    }
-                    return (string)$mid;
-                }
-
-                // choose role by current family state
-                $q = $pdo->prepare("
-                    SELECT
-                        SUM((relation_code='husband')::int) AS husbands,
-                        SUM((relation_code='wife')::int)    AS wives
-                    FROM family_members
-                    WHERE family_uuid = :f
-                ");
-                $q->execute([':f'=>$familyUuid]);
-                $c = $q->fetch(\PDO::FETCH_ASSOC) ?: ['husbands'=>0,'wives'=>0];
-                $role = ((int)$c['wives'] > 0 && (int)$c['husbands'] === 0) ? 'husband'
-                    : ((int)$c['husbands'] > 0 && (int)$c['wives'] === 0 ? 'wife' : 'husband');
-
-                $roleGender = ($role === 'husband' ? 'male' : ($role === 'wife' ? 'female' : null));
-
-                $q = $pdo->prepare("
-                    INSERT INTO family_members
-                    (uuid, family_uuid, user_uuid, pastor_uuid, parent_uuid, name, relation_code, gender, birth_date, death_date, created_at, updated_at)
-                    VALUES
-                    (gen_random_uuid(), :f, :u, :p, NULL, :n, :r, :rg, NULL, NULL, NOW(), NOW())
-                    RETURNING uuid
-                ");
-                $q->execute([
-                    ':f'=>$familyUuid,
-                    ':u'=>$userUuid,
-                    ':p'=>$currentPastorUuid,
-                    ':n'=>$currentPastorName,
-                    ':r'=>$role,
-                    ':rg'=>$roleGender,
-                ]);
-                return (string)$q->fetchColumn();
-            };
-
-            // * Helper: read current husband/wife member uuids in this family
-            $fetchSpouses = function() use ($pdo, $familyUuid): array {
-                $h = $pdo->prepare("SELECT uuid FROM family_members WHERE family_uuid = :f AND relation_code = 'husband' LIMIT 1");
-                $w = $pdo->prepare("SELECT uuid FROM family_members WHERE family_uuid = :f AND relation_code = 'wife'    LIMIT 1");
-                $h->execute([':f'=>$familyUuid]);
-                $w->execute([':f'=>$familyUuid]);
-                return [
-                    'husband' => $h->fetchColumn() ?: null,
-                    'wife'    => $w->fetchColumn() ?: null,
-                ];
-            };
-
-            //---------------------------------------------------------
-            // 3) parent fallback for child + prefill father/mother for the NEW child (if spouses exist)
-            //---------------------------------------------------------
-            $parentUuid = null;
-            $fatherUuid = null;
-            $motherUuid = null;
-            if ($isChild) {
-                if (!$currentPastorUuid) {
-                    $pdo->rollBack();
-                    flash_set('error', 'Hiányzó pastor rekord a felhasználóhoz.');
-                    header('Location: ' . $redirectUrl);
-                    exit;
-                }
-                $parentUuid = $ensurePastorMember();
-
-                $sp = $fetchSpouses();
-                if (!empty($sp['husband'])) $fatherUuid = (string)$sp['husband'];
-                if (!empty($sp['wife']))    $motherUuid = (string)$sp['wife'];
-            }
-
-            //---------------------------------------------------------
-            // 4) insert new member (gender included; father/mother for child prefill)
-            // parent_uuid maybe should be removed?????
-            //---------------------------------------------------------
-            $insertSql = "
-                INSERT INTO family_members 
-                (uuid, family_uuid, user_uuid, pastor_uuid, parent_uuid, father_uuid, mother_uuid, name, relation_code, gender, birth_date, death_date, created_at, updated_at)
-                VALUES 
-                (gen_random_uuid(), :family_uuid, NULL, :pastor_uuid, :parent_uuid, :father_uuid, :mother_uuid, :name, :relation_code, :gender, :birth_date, :death_date, NOW(), NOW())
-                RETURNING uuid
-            ";
-            $stmt = $pdo->prepare($insertSql);
-            $stmt->bindValue(':family_uuid', $familyUuid);
-            $stmt->bindValue(':pastor_uuid', ($isSpouse && $spousePastorUuid !== '') ? $spousePastorUuid : null);
-            $stmt->bindValue(':parent_uuid', $parentUuid);
-            $stmt->bindValue(':father_uuid', $fatherUuid);
-            $stmt->bindValue(':mother_uuid', $motherUuid);
-            $stmt->bindValue(':name', $name !== '' ? $name : null);
-            $stmt->bindValue(':relation_code', $relationCode);
-            $stmt->bindValue(':gender', $gender);
-            $stmt->bindValue(':birth_date', $birthDate !== '' ? $birthDate : null);
-            $stmt->bindValue(':death_date', $deathDate !== '' ? $deathDate : null);
-            $stmt->execute();
-            $newMemberUuid = (string)$stmt->fetchColumn();
-
-            //---------------------------------------------------------
-            // 5) spouse case: ensure pastor member + PR upsert (no current hijack)
-            //---------------------------------------------------------
-            if ($isSpouse && $newMemberUuid) {
-                $ensurePastorMember();
-
-                $stmt = $pdo->prepare("SELECT uuid FROM pastors WHERE user_uuid = :u LIMIT 1");
-                $stmt->execute([':u' => $userUuid]);
-                $pastorUuid = $stmt->fetchColumn();
-
-                if ($pastorUuid) {
-                    // Ha a lelkésznek már van máshol current PR, az új bejegyzés ne legyen current
-                    $cur = $pdo->prepare("
-                        SELECT family_uuid FROM pastor_relationships
-                        WHERE pastor_uuid = :p AND is_current = TRUE
-                        LIMIT 1
-                    ");
-                    $cur->execute([':p' => $pastorUuid]);
-                    $currentFamilyForPastor = $cur->fetchColumn() ?: null;
-
-                    // bool -> 'true'/'false' + cast to boolean az SQL-ben (Postgres)
-                    $makeCurrent = ($currentFamilyForPastor === null || $currentFamilyForPastor === $familyUuid);
-                    $icVal = $makeCurrent ? 'true' : 'false';
-
-                    if ($spousePastorUuid !== '') {
-                        // spouse is pastor
-                        $u = $pdo->prepare("
-                            UPDATE pastor_relationships
-                            SET spouse_pastor_uuid = :sp,
-                                spouse_uuid        = NULL,
-                                is_current         = :ic::boolean
-                            WHERE pastor_uuid = :p AND family_uuid = :f
-                        ");
-                        $u->execute([':sp'=>$spousePastorUuid, ':ic'=>$icVal, ':p'=>$pastorUuid, ':f'=>$familyUuid]);
-
-                        if ($u->rowCount() === 0) {
-                            $i = $pdo->prepare("
-                                INSERT INTO pastor_relationships
-                                (uuid, pastor_uuid, family_uuid, spouse_pastor_uuid, is_current)
-                                VALUES
-                                (gen_random_uuid(), :p, :f, :sp, :ic::boolean)
-                            ");
-                            $i->execute([':p'=>$pastorUuid, ':f'=>$familyUuid, ':sp'=>$spousePastorUuid, ':ic'=>$icVal]);
-                        }
-                    } else {
-                        // spouse is NOT pastor
-                        $u = $pdo->prepare("
-                            UPDATE pastor_relationships
-                            SET spouse_uuid        = :sm,
-                                spouse_pastor_uuid = NULL,
-                                is_current         = :ic::boolean
-                            WHERE pastor_uuid = :p AND family_uuid = :f
-                        ");
-                        $u->execute([':sm'=>$newMemberUuid, ':ic'=>$icVal, ':p'=>$pastorUuid, ':f'=>$familyUuid]);
-
-                        if ($u->rowCount() === 0) {
-                            $i = $pdo->prepare("
-                                INSERT INTO pastor_relationships
-                                (uuid, pastor_uuid, family_uuid, spouse_uuid, is_current)
-                                VALUES
-                                (gen_random_uuid(), :p, :f, :sm, :ic::boolean)
-                            ");
-                            $i->execute([':p'=>$pastorUuid, ':f'=>$familyUuid, ':sm'=>$newMemberUuid, ':ic'=>$icVal]);
-                        }
-                    }
-                }
-            }
-
-            //---------------------------------------------------------
-            // 6) FAMILY-WIDE NORMALIZATION :
-            //    After any insert (child or spouse), fill ALL children's missing father/mother
-            //    from the current family's husband/wife members, if present.
-            //---------------------------------------------------------
-            $spouses = $fetchSpouses(); // reflect the just-inserted member too
-            if (!empty($spouses['husband'])) {
-                $u = $pdo->prepare("
-                    UPDATE family_members 
-                    SET father_uuid = COALESCE(father_uuid, :father)
-                    WHERE family_uuid = :f
-                    AND LOWER(relation_code) IN ('child','children')
-                    AND father_uuid IS NULL
-                ");
-                $u->execute([':father' => $spouses['husband'], ':f' => $familyUuid]);
-            }
-            if (!empty($spouses['wife'])) {
-                $u = $pdo->prepare("
-                    UPDATE family_members
-                    SET mother_uuid = COALESCE(mother_uuid, :mother)
-                    WHERE family_uuid = :f
-                    AND LOWER(relation_code) IN ('child','children')
-                    AND mother_uuid IS NULL
-                ");
-                $u->execute([':mother' => $spouses['wife'], ':f' => $familyUuid]);
-            }
-
-            $pdo->commit();
-            flash_set('success', 'Családtag sikeresen hozzáadva és a gyermekek szülői mezői frissítve.');
-        } catch (\Throwable $e) {
-            if (isset($pdo) && $pdo->inTransaction()) $pdo->rollBack();
-            flash_set('error', 'Hiba történt a családtag mentése közben: ' . $e->getMessage());
+            $sp = $fetchSpouses();
+            if (!empty($sp['husband'])) $fatherUuid = (string)$sp['husband'];
+            if (!empty($sp['wife']))    $motherUuid = (string)$sp['wife'];
         }
 
+        //---------------------------------------------------------
+        // 4) insert new member (gender included; father/mother for child prefill)
+        //---------------------------------------------------------
+        $insertSql = "
+            INSERT INTO family_members 
+            (uuid, family_uuid, user_uuid, pastor_uuid, parent_uuid, father_uuid, mother_uuid, name, relation_code, gender, birth_date, death_date, created_at, updated_at)
+            VALUES 
+            (gen_random_uuid(), :family_uuid, NULL, :pastor_uuid, :parent_uuid, :father_uuid, :mother_uuid, :name, :relation_code, :gender, :birth_date, :death_date, NOW(), NOW())
+            RETURNING uuid
+        ";
+        $stmt = $pdo->prepare($insertSql);
+        $stmt->bindValue(':family_uuid', $data['family_uuid']);
+        $stmt->bindValue(':pastor_uuid', ($isSpouse && $data['spouse_pastor_uuid'] !== '') ? $data['spouse_pastor_uuid'] : null);
+        $stmt->bindValue(':parent_uuid', $parentUuid);
+        $stmt->bindValue(':father_uuid', $fatherUuid);
+        $stmt->bindValue(':mother_uuid', $motherUuid);
+        $stmt->bindValue(':name', $data['name'] !== '' ? $data['name'] : null);
+        $stmt->bindValue(':relation_code', $relationCode);
+        $stmt->bindValue(':gender', $data['gender']);
+        $stmt->bindValue(':birth_date', $data['birth_date'] !== '' ? $data['birth_date'] : null);
+        $stmt->bindValue(':death_date', $data['death_date'] !== '' ? $data['death_date'] : null);
+        $stmt->execute();
+        $newMemberUuid = (string)$stmt->fetchColumn();
+
+        //---------------------------------------------------------
+        // 5) spouse case: ensure pastor member + PR upsert (no current hijack)
+        //---------------------------------------------------------
+        if ($isSpouse && $newMemberUuid) {
+            $ensurePastorMember();
+
+            $stmt = $pdo->prepare("SELECT uuid FROM pastors WHERE user_uuid = :u LIMIT 1");
+            $stmt->execute([':u' => $userUuid]);
+            $pastorUuid = $stmt->fetchColumn();
+
+            if ($pastorUuid) {
+                $cur = $pdo->prepare("
+                    SELECT family_uuid FROM pastor_relationships
+                    WHERE pastor_uuid = :p AND is_current = TRUE
+                    LIMIT 1
+                ");
+                $cur->execute([':p' => $pastorUuid]);
+                $currentFamilyForPastor = $cur->fetchColumn() ?: null;
+
+                $makeCurrent = ($currentFamilyForPastor === null || $currentFamilyForPastor === $data['family_uuid']);
+                $icVal = $makeCurrent ? 'true' : 'false';
+
+                if ($data['spouse_pastor_uuid'] !== '') {
+                    $u = $pdo->prepare("
+                        UPDATE pastor_relationships
+                        SET spouse_pastor_uuid = :sp,
+                            spouse_uuid        = NULL,
+                            is_current         = :ic::boolean
+                        WHERE pastor_uuid = :p AND family_uuid = :f
+                    ");
+                    $u->execute([':sp' => $data['spouse_pastor_uuid'], ':ic' => $icVal, ':p' => $pastorUuid, ':f' => $data['family_uuid']]);
+
+                    if ($u->rowCount() === 0) {
+                        $i = $pdo->prepare("
+                            INSERT INTO pastor_relationships
+                            (uuid, pastor_uuid, family_uuid, spouse_pastor_uuid, is_current)
+                            VALUES
+                            (gen_random_uuid(), :p, :f, :sp, :ic::boolean)
+                        ");
+                        $i->execute([':p' => $pastorUuid, ':f' => $data['family_uuid'], ':sp' => $data['spouse_pastor_uuid'], ':ic' => $icVal]);
+                    }
+                } else {
+                    $u = $pdo->prepare("
+                        UPDATE pastor_relationships
+                        SET spouse_uuid        = :sm,
+                            spouse_pastor_uuid = NULL,
+                            is_current         = :ic::boolean
+                        WHERE pastor_uuid = :p AND family_uuid = :f
+                    ");
+                    $u->execute([':sm' => $newMemberUuid, ':ic' => $icVal, ':p' => $pastorUuid, ':f' => $data['family_uuid']]);
+
+                    if ($u->rowCount() === 0) {
+                        $i = $pdo->prepare("
+                            INSERT INTO pastor_relationships
+                            (uuid, pastor_uuid, family_uuid, spouse_uuid, is_current)
+                            VALUES
+                            (gen_random_uuid(), :p, :f, :sm, :ic::boolean)
+                        ");
+                        $i->execute([':p' => $pastorUuid, ':f' => $data['family_uuid'], ':sm' => $newMemberUuid, ':ic' => $icVal]);
+                    }
+                }
+            }
+        }
+
+        //---------------------------------------------------------
+        // 6) FAMILY-WIDE NORMALIZATION
+        //---------------------------------------------------------
+        $spouses = $fetchSpouses();
+        if (!empty($spouses['husband'])) {
+            $u = $pdo->prepare("
+                UPDATE family_members 
+                SET father_uuid = COALESCE(father_uuid, :father)
+                WHERE family_uuid = :f
+                AND LOWER(relation_code) IN ('child','children')
+                AND father_uuid IS NULL
+            ");
+            $u->execute([':father' => $spouses['husband'], ':f' => $data['family_uuid']]);
+        }
+        if (!empty($spouses['wife'])) {
+            $u = $pdo->prepare("
+                UPDATE family_members
+                SET mother_uuid = COALESCE(mother_uuid, :mother)
+                WHERE family_uuid = :f
+                AND LOWER(relation_code) IN ('child','children')
+                AND mother_uuid IS NULL
+            ");
+            $u->execute([':mother' => $spouses['wife'], ':f' => $data['family_uuid']]);
+        }
+
+        $pdo->commit();
+        flash_set('success', 'Családtag sikeresen hozzáadva és a gyermekek szülői mezői frissítve.');
         header('Location: ' . $redirectUrl);
         exit;
     }
@@ -673,6 +756,115 @@ final class FamilyController
         exit;
     }
 
+
+    // ---------------------------------------------------------
+    // POST /adatlap/family/marriage/update
+    // ---------------------------------------------------------
+    public function updateMarriage(): void
+    {
+        require_can('adatlap.lelkesz');
+
+        if (!verify_csrf()) {
+            flash_set('error', 'Érvénytelen vagy hiányzó biztonsági token.');
+            header('Location: ' . base_url('/adatlap/family'));
+            exit;
+        }
+
+        $familyUuid       = trim($_POST['family_uuid'] ?? '');
+        $pastorUuid       = trim($_POST['pastor_uuid'] ?? '');
+        $marriageDate     = trim($_POST['marriage_date'] ?? '');
+        $marriagePlace    = trim($_POST['marriage_place'] ?? '');
+        $marriageEndDate  = trim($_POST['marriage_end_date'] ?? '');
+
+        $redirectUrl = base_url('/adatlap/family/' . $familyUuid);
+
+        if ($familyUuid === '' || $pastorUuid === '') {
+            flash_set('error', 'Hiányzó család vagy lelkész azonosító.');
+            header('Location: ' . base_url('/adatlap/family'));
+            exit;
+        }
+
+        try {
+            $pdo = DB::pdo();
+            $pdo->beginTransaction();
+
+            // Permission check: ensure the current user is the pastor associated with this relationship
+            $currentUser = current_user();
+            $userUuid = $currentUser['uuid'] ?? null;
+
+            $stmt = $pdo->prepare("
+                SELECT COUNT(*)
+                FROM pastor_relationships pr
+                JOIN pastors p ON pr.pastor_uuid = p.uuid
+                WHERE pr.family_uuid = :family_uuid
+                AND pr.pastor_uuid = :pastor_uuid
+                AND p.user_uuid = :user_uuid
+            ");
+            $stmt->execute([
+                ':family_uuid' => $familyUuid,
+                ':pastor_uuid' => $pastorUuid,
+                ':user_uuid'   => $userUuid
+            ]);
+
+            if ((int)$stmt->fetchColumn() === 0) {
+                $pdo->rollBack();
+                flash_set('error', 'Nincs jogosultságod a házassági adatok szerkesztéséhez.');
+                header('Location: ' . $redirectUrl);
+                exit;
+            }
+
+            // Determine is_current status and manage other relationships
+            if ($marriageEndDate === '') {
+                // User intends to make this the current relationship.
+                // First, ensure no other relationship is marked as current for this pastor.
+                $resetCurrentStmt = $pdo->prepare("
+                    UPDATE pastor_relationships
+                    SET is_current = FALSE, updated_at = NOW()
+                    WHERE pastor_uuid = :pastor_uuid
+                    AND family_uuid != :family_uuid
+                    AND is_current = TRUE
+                ");
+                $resetCurrentStmt->execute([
+                    ':pastor_uuid' => $pastorUuid,
+                    ':family_uuid' => $familyUuid
+                ]);
+                $isCurrent = true; // This one becomes the current one.
+            } else {
+                // If an end date is set, the relationship is not current.
+                $isCurrent = false;
+            }
+
+            $sql = "
+                UPDATE pastor_relationships SET
+                    marriage_date = :marriage_date,
+                    marriage_place = :marriage_place,
+                    marriage_end_date = :marriage_end_date,
+                    is_current = :is_current,
+                    updated_at = NOW()
+                WHERE family_uuid = :family_uuid AND pastor_uuid = :pastor_uuid
+            ";
+            $stmt = $pdo->prepare($sql);
+            $stmt->bindValue(':marriage_date',    $marriageDate !== '' ? $marriageDate : null);
+            $stmt->bindValue(':marriage_place',   $marriagePlace !== '' ? $marriagePlace : null);
+            $stmt->bindValue(':marriage_end_date', $marriageEndDate !== '' ? $marriageEndDate : null);
+            $stmt->bindValue(':is_current',       $isCurrent, \PDO::PARAM_BOOL);
+            $stmt->bindValue(':family_uuid',      $familyUuid);
+            $stmt->bindValue(':pastor_uuid',      $pastorUuid);
+            $stmt->execute();
+
+            $pdo->commit();
+            flash_set('success', 'Házassági adatok sikeresen frissítve.');
+        } catch (\Throwable $e) {
+            if (isset($pdo) && $pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
+            error_log('[FamilyController::updateMarriage][ERR] ' . $e->getMessage());
+            flash_set('error', 'Hiba történt a házassági adatok frissítése közben.');
+        }
+
+        header('Location: ' . $redirectUrl);
+        exit;
+    }
 
 
 }
